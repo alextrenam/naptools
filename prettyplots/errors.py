@@ -15,13 +15,16 @@ plt.rc("legend", fontsize=12)
 
 
 class ErrorPlots:
-    def __init__(self, project_name, degree_list):
+    def __init__(self, project_name, degree_list, error_norms_dict, parameters={}):
         self.project_name = project_name
-        self.degree_list = degree_list
-        self.error_df_dict = {}
+        self.degree_list = degree_list  # List of polynomial degrees to plot
+        self.error_df_dict = {}  # Dictionary to hold all error data
+        self.error_norms_dict = error_norms_dict  # Norms being plotted and LaTeX notation for legend
+        self.parameters = {}
+        self.parameters.update(parameters)
 
         # Populate dictionary of error data (for various polynomial degree)
-        for degree in degree_list:
+        for degree in self.degree_list:
             error_df = pd.read_csv("results/" + self.project_name + "/errors_p" + str(degree) + ".csv")
             self.error_df_dict[str(degree)] = error_df
 
@@ -30,6 +33,8 @@ class ErrorPlots:
         convergence_df = error_df.copy(deep=True)
         for i in range(error_df.shape[0] - 1):
             convergence_df.loc[i] = np.log2((error_df.loc[i]) / (error_df.loc[i + 1]))
+
+        return convergence_df
         
     def print_degree(self, degree):
         # Print error table
@@ -56,23 +61,25 @@ class ErrorPlots:
             labels=["Time taken"],
             inplace=True,
         )
+    
+        renaming_columns = {}
         
-        # Calculate line slopes for showing convergence rates on plot
-        L2_slope = stats.linregress(np.log2(error_df["h"]), np.log2(error_df["u L2"]))[0]
-        H1_slope = stats.linregress(np.log2(error_df["h"]), np.log2(error_df["u H1"]))[0]
+        for error, error_norm in self.error_norms_dict.items():
+            # Calculate line slope for showing convergence rates on plot
+            slope = stats.linregress(np.log2(error_df["h"]), np.log2(error_df[error]))[0]
+
+            # Relabel the columns to the correct LaTeX norm notation
+            renaming_columns[error] = fr"{error_norm}" + f", Slope (EOC): {slope:.3f}"
         
         # Rename columns for correct plot labels
         plotting_df.rename(
-            columns={
-                "u L2": r"$|\!|u - u_h|\!|$" + f", Slope (EOC): {L2_slope:.3f}",
-                "u H1": r"$|\!|\nabla\left(u - u_h\right)|\!|$" + f", Slope (EOC): {H1_slope:.3f}",
-            },
+            columns=renaming_columns,
             inplace=True,
         )
-        
+
         # Create combined plot
         fig, axs = plt.subplots()
-        plotting_df.plot(ax=axs, style=["x-", "o--"])
+        plotting_df.plot(ax=axs, style=self.parameters["line_style"])
         
         plt.xlabel("$h$")
         plt.ylabel("Error")
@@ -87,33 +94,41 @@ class ErrorPlots:
         
         print(f"Combined plot saved as: {filename}")
 
-    def plot_all(self):
+    def plot_all(self, variable):
         # Create combined plot
         fig, axs = plt.subplots()
-        
+
         for degree, error_df in self.error_df_dict.items():
             # Remove unnecessary columns from DataFrame
             plotting_df = error_df.set_index("h")
+
+            columns_to_drop = []
+
+            for col in plotting_df.columns:
+                if variable + " " not in col:
+                    columns_to_drop.append(col)
             
             plotting_df.drop(
                 axis=1,
-                labels=["Time taken"],
+                labels=["Time taken"] + columns_to_drop,
                 inplace=True,
             )
+ 
+            renaming_columns = {}
             
-            # Calculate line slopes for showing convergence rates on plot
-            L2_slope = stats.linregress(np.log2(error_df["h"]), np.log2(error_df["u L2"]))[0]
-            H1_slope = stats.linregress(np.log2(error_df["h"]), np.log2(error_df["u H1"]))[0]
-            
+            for error, error_norm in self.error_norms_dict.items():
+                # Calculate line slope for showing convergence rates on plot
+                slope = stats.linregress(np.log2(error_df["h"]), np.log2(error_df[error]))[0]
+                
+                # Relabel the columns to the correct LaTeX norm notation
+                renaming_columns[error] = r"$p=$" + f"{degree}, " + fr"{error_norm}, " + f"EOC: {slope:.3f}"
+                
             # Rename columns for correct plot labels
             plotting_df.rename(
-                columns={
-                    "u L2": r"$p=$" + f"{degree}, " + r"$L2$, " + f"EOC: {L2_slope:.3f}",
-                    "u H1": r"$p=$" + f"{degree}, " + r"$H1$, " + f"EOC: {H1_slope:.3f}",
-                },
+                columns=renaming_columns,
                 inplace=True,
             )
-            
+
             plotting_df.plot(ax=axs, style=["x-", "o--"])
         
         plt.xlabel("$h$")
@@ -123,7 +138,7 @@ class ErrorPlots:
         plt.legend()
         plt.grid(which="both", color="#cfcfcf")
         
-        filename = "results/" + project_name + "/benchmark_all.pdf"
+        filename = "results/" + project_name + "/benchmark_all_" + variable + ".pdf"
         plt.savefig(filename)
         plt.close()
         

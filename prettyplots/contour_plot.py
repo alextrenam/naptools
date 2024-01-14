@@ -10,9 +10,9 @@ import re
 # POTENTIAL EXTENSIONS:
 # -- PLOT SIDE BY SIDE CONTOUR PLOTS (FOR SHOWING MULTIPLE VARIABLES IN VIDEOS)
 
+
 class PrettyPlots:
     """Methods of this class create nice looking plots of various nature."""
-
     def __init__(self, input_data, plotting_variable):
         self.input_data = input_data
         self.plotting_variable = plotting_variable
