@@ -1,1 +1,2 @@
-from .errors import *
+from .plot import *
+from .error_plot import *

@@ -1,42 +1,35 @@
-import sys
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from scipy import stats
-
-project_name = sys.argv[1]
-poly_degree = int(sys.argv[2])
-
-plt.rcParams["font.family"] = "serif"
-plt.rcParams["mathtext.fontset"] = "cm"
-plt.rcParams["figure.figsize"] = [12, 10]
-plt.rc("axes", labelsize=14)
-plt.rc("legend", fontsize=12)
+from .plot import BasePlot
 
 
-class ErrorPlots:
-    def __init__(self, project_name, degree_list, error_norms_dict, parameters={}):
+class ErrorData:
+    """Class for holding and performing calculations on error data"""
+    def __init__(self, project_name, degree_list, error_norms_dict):
         self.project_name = project_name
         self.degree_list = degree_list  # List of polynomial degrees to plot
         self.error_df_dict = {}  # Dictionary to hold all error data
         self.error_norms_dict = error_norms_dict  # Norms being plotted and LaTeX notation for legend
-        self.parameters = {}
-        self.parameters.update(parameters)
-
+        
         # Populate dictionary of error data (for various polynomial degree)
         for degree in self.degree_list:
             error_df = pd.read_csv("results/" + self.project_name + "/errors_p" + str(degree) + ".csv")
             self.error_df_dict[str(degree)] = error_df
 
     def get_convergence(self, degree):
+        """Returns a DataFrame of the convergence of the provided error data"""
         error_df = self.error_df_dict[str(degree)]
         convergence_df = error_df.copy(deep=True)
+        
         for i in range(error_df.shape[0] - 1):
             convergence_df.loc[i] = np.log2((error_df.loc[i]) / (error_df.loc[i + 1]))
 
         return convergence_df
-        
+
     def print_degree(self, degree):
+        """Prints error and convergence tables in human-readable format"""
         # Print error table
         error_df = self.error_df_dict[str(degree)]
         print("\033[2;31;43m  ERROR VALUES \033[0;0m")
@@ -50,8 +43,19 @@ class ErrorPlots:
         print("\033[2;31;43m  CONVERGENCE RATES \033[0;0m")
         print(convergence_df)
             
-    def plot_degree(self, degree):
-        error_df = self.error_df_dict[str(degree)]
+    
+class ErrorPlot(BasePlot):
+    """Class for creating error plots based on the underlying error data"""
+    def __init__(self, error_data):
+        self.error_data = error_data
+        super().__init__()
+
+    def plot_degree(self, degree, parameters={}):
+        """Plot all errors for a single polynomial degree"""
+        self.parameters.update(parameters)
+        self.output_filename = "results/" + self.error_data.project_name + "/benchmark_p" + str(degree) + ".pdf"
+        self.fig, self.axs = plt.subplots()
+        error_df = self.error_data.error_df_dict[str(degree)]
         
         # Remove unnecessary columns from DataFrame
         plotting_df = error_df.set_index("h")
@@ -64,7 +68,7 @@ class ErrorPlots:
     
         renaming_columns = {}
         
-        for error, error_norm in self.error_norms_dict.items():
+        for error, error_norm in self.error_data.error_norms_dict.items():
             # Calculate line slope for showing convergence rates on plot
             slope = stats.linregress(np.log2(error_df["h"]), np.log2(error_df[error]))[0]
 
@@ -77,28 +81,17 @@ class ErrorPlots:
             inplace=True,
         )
 
-        # Create combined plot
-        fig, axs = plt.subplots()
-        plotting_df.plot(ax=axs, style=self.parameters["line_style"])
-        
-        plt.xlabel("$h$")
-        plt.ylabel("Error")
-        plt.xscale("log")
-        plt.yscale("log")
-        plt.legend()
-        plt.grid(which="both", color="#cfcfcf")
-        
-        filename = "results/" + project_name + "/benchmark_p" + str(poly_degree) + ".pdf"
-        plt.savefig(filename)
-        plt.close()
-        
-        print(f"Combined plot saved as: {filename}")
+        # Create plot
+        plotting_df.plot(ax=self.axs) # , style=self.parameters["line_style"])
+        self.output()
+    
+    def plot_variable(self, variable, parameters={}):
+        """Plot errors of all polynomial degree for the given variable"""
+        self.parameters.update(parameters)
+        self.output_filename = "results/" + self.error_data.project_name + "/benchmark_all_" + variable + ".pdf"
+        self.fig, self.axs = plt.subplots()
 
-    def plot_all(self, variable):
-        # Create combined plot
-        fig, axs = plt.subplots()
-
-        for degree, error_df in self.error_df_dict.items():
+        for degree, error_df in self.error_data.error_df_dict.items():
             # Remove unnecessary columns from DataFrame
             plotting_df = error_df.set_index("h")
 
@@ -116,7 +109,7 @@ class ErrorPlots:
  
             renaming_columns = {}
             
-            for error, error_norm in self.error_norms_dict.items():
+            for error, error_norm in self.error_data.error_norms_dict.items():
                 # Calculate line slope for showing convergence rates on plot
                 slope = stats.linregress(np.log2(error_df["h"]), np.log2(error_df[error]))[0]
                 
@@ -129,17 +122,17 @@ class ErrorPlots:
                 inplace=True,
             )
 
-            plotting_df.plot(ax=axs, style=["x-", "o--"])
-        
+            # Create plot
+            plotting_df.plot(ax=self.axs, style=["x-", "o--"])
+
+        self.output()
+
+    def output(self):
+        # Formatting
         plt.xlabel("$h$")
         plt.ylabel("Error")
         plt.xscale("log")
         plt.yscale("log")
-        plt.legend()
         plt.grid(which="both", color="#cfcfcf")
-        
-        filename = "results/" + project_name + "/benchmark_all_" + variable + ".pdf"
-        plt.savefig(filename)
-        plt.close()
-        
-        print(f"Combined plot saved as: {filename}")
+
+        super().output()
