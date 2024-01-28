@@ -1,0 +1,4 @@
+font.family : serif
+mathtext.fontset : cm
+axes.labelsize : 14
+legend.fontsize : 12

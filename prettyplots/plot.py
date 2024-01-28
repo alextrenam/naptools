@@ -1,161 +1,56 @@
-import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib import cm, ticker
+import pandas as pd
 import os
-import re
 
-# TODO -- sort default parameter stuff out
+# Default style parameters
+plt.style.use("./default_style.mplstyle")
 
-plt.rcParams["font.family"] = "serif"
-plt.rcParams["mathtext.fontset"] = "cm"
-plt.rcParams["figure.figsize"] = [12, 10]
-plt.rc("axes", labelsize=14)
-plt.rc("legend", fontsize=12)
 
-class MultiPlot:
-    """This class is a custom holder for multiple individual plots (useful if
-    a single image with multiple plots, e.g. for making a video, is needed)"""
-    def __init__(self, num_rows, num_columns):
-        self.num_rows = num_rows
-        self.num_columns = num_columns
+class BaseData:
+    """Base class for holding and performing calculations on data"""
+    def __init__(self, *data_files):
+        self.data_files = data_files
+        self.data_df_dict = {}
         
+        # Populate dictionary of data
+        for data_file in self.data_files:
+            data_df = pd.read_csv(data_file)
+            self.data_df_dict[data_file] = data_df
 
-    def plot(self, row_index, column_index, plot_type, data):
-        """Creates an instance of Plot to populate the given MultiPlot element"""
-        pass
+    def print_data(self, data_df):
+        print(self.data_df_dict[data_df])
 
-        
-class Plotter:
-    """Data handler with method calls which create instances of various Plots"""
-    def __init__(self, input_data_files):
-        self.input_data_files = input_data_files
-        self.num_timesteps = len(self.input_data)
-        self.data = []
-        self.timestamps = []        
-        self.parameters = {
-            "x_label": "$x$",
-            "y_label": "$v$",
-            "font_size": 32,
-            "colour_map": cm.plasma,
-            "num_thin_lines": 5,
-            "figure_height": 6,
-            "figure_width": 6,
-            "separate_colour_bar": False,
-        }
-        plt.rcParams["font.family"] = "serif"
-        plt.rcParams["mathtext.fontset"] = "cm"
-        plt.rcParams["axes.formatter.use_mathtext"] = True
-        plt.rcParams["savefig.bbox"] = "tight"
-        plt.rcParams["axes.labelsize"] = self.plotting_params["font_size"]
-
-        # Read in the data and timestamps
-        self.get_data()
-
-    def get_data(self):
-        """Store the input data (from potentially multiple files)"""
-        
-        max_vals = []
-        min_vals = []
-        
-        for input_data_file in self.input_data_files:
-            df = pd.read_csv(input_data_file)
-
-            df_max_val = df[self.plotting_variable].max()
-            df_min_val = df[self.plotting_variable].min()
-
-            if self.plot_type == "contour":
-                # We require a "timestamp" (doesn't need to represent time in reality)
-                # for creating the Dataset
-                try:
-                    timestamp = re.search(r"\d+", input_data_file).group()
-                    
-                    # For ease in later post-processing, make sure the timestamps
-                    # all have the same length
-                    while len(timestamp) < 4:
-                        timestamp = "0" + timestamp
-                        self.timestamps.append(timestamp)
-                
-                except Exception:
-                    timestamp = None
-                    print("\n\tException: Invalid input file name -- timestamp required.")
-                    print(f"\tFile responsible: {input_data_file}\n")
-                    break
-
-            self.data.append(df)
-            max_vals.append(df_max_val)
-            min_vals.append(df_min_val)
-
-        self.data_max = max(max_vals)
-        self.data_min = min(min_vals)
-        
-        # Default behaviour is to use the entire set of data for the colouring
-        self.colour_bar_max = self.data_max
-        self.colour_bar_min = self.data_min
-
-    def plot(self, output_filename, plot_type, plotting_variable, *independent_vars):
-        """Plot (a subset of) the data in the desired format"""
-        if plot_type == "line":
-            pp.BasePlot(output_filename, plotting_variable, independent_vars[0])
-        elif plot_type == "contour":
-            pp.ContourPlot(output_filename,
-                           plotting_variable,
-                           independent_vars[0],
-                           independent_vars[1])
-                    
-
-    def plot_series(self, output_filename, plot_type, plotting_variable, *independent_vars):
-        """Create a plot for each of the input files"""
-        for i in range(self.num_timesteps):
-            print(f"Plotting figure {i+1}...")
-            self.plot(self.data[i], self.timestamps[i])
-
-        if plot_type == "contour":
-            if self.separate_colour_bar:
-                fig, axs = plt.subplots(figsize=(15, 15))
-                dummy_Xi = self.data[0]["Points:0"]
-                dummy_Yi = self.data[0]["Points:1"]
-                dummy_values = self.data[0][self.plotting_variable]
-                dummy_contour = axs.tricontourf(dummy_Xi,
-                                                dummy_Yi,
-                                                dummy_values,
-                                                self.colour_levels,
-                                                # norm=colors.LogNorm(),
-                                                cmap=self.plotting_params["colour_map"])
-                
-                cbar = plt.colorbar(dummy_contour,
-                                    ax=axs,
-                                    label=rf"${self.plotting_variable}$",
-                                    aspect=50,
-                                    location="top")
-                cbar.ax.tick_params(labelsize=0.75*self.plotting_params["font_size"])
-                tick_locator = ticker.MaxNLocator(nbins=5)
-                cbar.locator = tick_locator
-                cbar.update_ticks()
-                axs.remove()
-                plt.savefig(output_filename + "contour_colour_bar.pdf")
-        
 
 class BasePlot:
     """Basic two-dimensional plot with one independent and one dependent variable.
     This class is also the basis for the other kinds of plots, featuring the general
     structure of: __init__(), draw(), output()."""
-    def __init__(self):
-        self.parameters = {}
+    def __init__(self, data):
+        self.data = data
+
+        # Default plotting parameters
+        self.parameters = {
+            "log-log": False,
+            "grid": False,
+        }
         
         # fig.set_figheight(self.plotting_params["figure_height"])
         # fig.set_figwidth(self.plotting_params["figure_width"])
         
-    def plot(self, plotting_var_data, independent_var_data, output_filename, parameters={}):
+    def plot(self, independent_vars, dependent_vars, output_filename, parameters={}):
+        """Plot the given independent and dependent variables"""
         self.parameters.update(parameters)
         self.output_filename = output_filename
         self.fig, self.axs = plt.subplots()
-        self.draw()
+        
+        for data_file, data_df in self.data.data_df_dict.items():
+            data_df.plot(independent_vars, dependent_vars, ax=self.axs)
+        
         self.output()
 
-    def draw(self):
-        pass
-
     def output(self):
+        """Format and output plot to file"""
+        self.resolve_parameters()
         self.fig.tight_layout()
         plt.legend()
         os.makedirs(os.path.dirname(self.output_filename), exist_ok=True)
@@ -163,4 +58,11 @@ class BasePlot:
         plt.close()
         print(f"Results plotted as: {self.output_filename}")
         
-                
+    def resolve_parameters(self):
+        """Act on parameter values to modify plot appearance"""
+        if self.parameters["log-log"]:
+            plt.xscale("log")
+            plt.yscale("log")
+
+        if self.parameters["grid"]:
+            plt.grid(which="both", color="#cfcfcf")

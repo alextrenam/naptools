@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from scipy import stats
-from .plot import BasePlot
+from prettyplots import BasePlot
 
 
 class ErrorData:
@@ -31,9 +31,8 @@ class ErrorData:
     def print_degree(self, degree):
         """Prints error and convergence tables in human-readable format"""
         # Print error table
-        error_df = self.error_df_dict[str(degree)]
         print("\033[2;31;43m  ERROR VALUES \033[0;0m")
-        print(error_df)
+        print(self.error_df_dict[str(degree)])
 
         # Calculate convergence rate table
         convergence_df = self.get_convergence(degree)
