@@ -6,6 +6,13 @@ import os
 plt.style.use("./default_style.mplstyle")
 
 
+# TODO -- Initialise with dictionary of reference names and data files. This should
+#         unify the error plotting with plotting in general. For many data files maybe
+#         this requires some more thinking.
+#
+#      -- Setup some default parameter choices for easily reading one, two, three, four
+#         plots next to each other in a LaTeX document.
+
 class BaseData:
     """Base class for holding and performing calculations on data"""
     def __init__(self, *data_files):
