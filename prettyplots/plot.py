@@ -15,17 +15,17 @@ plt.style.use("./default_style.mplstyle")
 
 class BaseData:
     """Base class for holding and performing calculations on data"""
-    def __init__(self, *data_files):
-        self.data_files = data_files
+    def __init__(self, data_file_dict):
+        self.data_file_dict = data_file_dict
         self.data_df_dict = {}
         
         # Populate dictionary of data
-        for data_file in self.data_files:
+        for data_file_id, data_file in self.data_file_dict.items():
             data_df = pd.read_csv(data_file)
-            self.data_df_dict[data_file] = data_df
+            self.data_df_dict[data_file_id] = data_df
 
-    def print_data(self, data_df):
-        print(self.data_df_dict[data_df])
+    def print_data(self, data_df_id):
+        print(self.data_df_dict[data_df_id])
 
 
 class BasePlot:
