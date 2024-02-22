@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import pandas as pd
+import re
 import numpy as np
 from scipy import stats
 from prettyplots import BaseData, BasePlot
@@ -10,7 +11,12 @@ class ErrorData(BaseData):
     def __init__(self, data_file_dict):
         super().__init__(data_file_dict)
         self.error_df_dict = self.data_df_dict
+        self.error_norms_dict = {}
 
+    def update_norms(self, error_norms_dict, custom_style_dict={}):
+        """Update LaTeX norm notation"""
+        self.error_norms_dict = error_norms_dict
+        
     def get_convergence(self, degree_id):
         """Returns a DataFrame of the convergence of the provided error data"""
         error_df = self.error_df_dict[degree_id]
@@ -28,7 +34,7 @@ class ErrorData(BaseData):
         print(self.error_df_dict[degree_id])
 
         # Calculate convergence rate table
-        convergence_df = self.get_convergence(degree)
+        convergence_df = self.get_convergence(degree_id)
         
         # Drop the final row before printing
         convergence_df.drop(convergence_df.tail(1).index, inplace=True)
@@ -42,12 +48,15 @@ class ErrorPlot(BasePlot):
         super().__init__(error_data)
         self.error_data = self.data
 
-    def plot_degree(self, degree, parameters={}):
+    def plot_degree(self, degree_id, output_filename, parameters={}):
         """Plot all errors for a single polynomial degree"""
         self.parameters.update(parameters)
-        self.output_filename = "results/" + self.error_data.project_name + "/benchmark_p" + str(degree) + ".pdf"
+        self.output_filename = output_filename
         self.fig, self.axs = plt.subplots()
-        error_df = self.error_data.error_df_dict[str(degree)]
+        error_df = self.error_data.error_df_dict[degree_id]
+        line_styles = self.get_line_styles(degree_id=degree_id)
+        line_colours = [line_styles_degree[1] for line_styles_degree in line_styles][0]
+        line_styles = [line_styles_degree[0] for line_styles_degree in line_styles][0]
         
         # Remove unnecessary columns from DataFrame
         plotting_df = error_df.set_index("h")
@@ -74,7 +83,7 @@ class ErrorPlot(BasePlot):
         )
 
         # Create plot
-        plotting_df.plot(ax=self.axs, style=self.line_styles)
+        plotting_df.plot(ax=self.axs, style=line_styles, color=line_colours)
         self.output()
     
     def plot_variable(self, variable, output_filename, parameters={}):
@@ -82,13 +91,15 @@ class ErrorPlot(BasePlot):
         self.parameters.update(parameters)
         self.output_filename = output_filename
         self.fig, self.axs = plt.subplots()
+        
+        line_styles = self.get_line_styles(variable=variable)
+        line_colours = [line_styles_degree[1] for line_styles_degree in line_styles]
+        line_styles = [line_styles_degree[0] for line_styles_degree in line_styles]
 
         for error_df_id, error_df in self.error_data.error_df_dict.items():
             # Remove unnecessary columns from DataFrame
             plotting_df = error_df.set_index("h")
             columns_to_drop = []
-            plotting_line_styles_dict = self.line_styles_dict
-            line_styles = []
 
             for col in plotting_df.columns:
                 if variable + " " not in col:
@@ -100,14 +111,9 @@ class ErrorPlot(BasePlot):
                 inplace=True,
             )
 
-            for line_style_id in columns_to_drop:
-                if line_style_id in plotting_line_styles_dict:
-                    del plotting_line_styles_dict[line_style_id]
-            
- 
             renaming_columns = {}
             
-            for error, error_norm in self.error_norms_dict.items():
+            for error, error_norm in self.error_data.error_norms_dict.items():
                 # Calculate line slope for showing convergence rates on plot
                 slope = stats.linregress(np.log2(error_df["h"]), np.log2(error_df[error]))[0]
                 
@@ -121,8 +127,8 @@ class ErrorPlot(BasePlot):
             )
 
             # Create plot
-            line_styles = list(plotting_line_styles_dict.values())
-            plotting_df.plot(ax=self.axs, style=line_styles)
+            style_degree_index = int(re.findall(r"\d+", error_df_id)[0]) - 1
+            plotting_df.plot(ax=self.axs, style=line_styles[style_degree_index], color=line_colours[style_degree_index])
 
         self.output()
 
@@ -135,76 +141,77 @@ class ErrorPlot(BasePlot):
 
         super().output()
 
-    def update_legend(self, error_norms_dict, custom_style_dict={}):
-        """Update notation in the legend (e.g. LaTeX norm notation)"""
-        self.error_norms_dict = error_norms_dict
-        self.line_styles_dict = {}
-        self.variable_marker_dict = {}
-        self.markers = ["o", "x", "^"]
-        self.marker_counter = 0
-        
-        for error_norm in error_norms_dict:
-            # Assuming the ID is of the form "variable norm"
-            variable = error_norm.split(" ")[0]
-            
-            if variable not in self.variable_marker_dict:
-                self.variable_marker_dict.update({variable: self.markers[self.marker_counter]})
-                self.marker_counter += 1
-
-            line_style = self.variable_marker_dict[variable]
-            
-            if "L2" in error_norm:
-                line_style += "-"
-
-            elif "H1" in error_norm:
-                line_style += "--"
-
-            self.line_styles_dict[error_norm] = line_style
-
-        self.line_styles_dict.update(custom_style_dict)
-        self.line_styles = list(self.line_styles_dict.values())
-
-    def get_line_styles(self, error_norms_dict, context, custom_style_dict={}):
+    def get_line_styles(self, degree_id=None, variable=None, custom_style_dict={}):
         """Returns line styles for plotting"""
         line_styles_dict = {}
-        variable_marker_dict = {}
         markers = ["o", "x", "^", "v", "d", "+"]
         colours = ["blue", "orange", "green", "red", "purple", "pink"]
         lines = ["-", "--", ":", "-."]
         marker_counter = 0
+        colour_counter = 0
 
-        # I THINK THE IDEA HERE SHOULD BE THAT A DICTIONARY IS CREATED
-        # WITH THE KEYS STORING ALL THE RELEVANT INFORMATION TO ASSIGN
-        # UNIQUE LINE STYLES -- MAYBE A DICTIONARY OF DICTIONARIES?
-        # (SINCE THAT IS HOW THE DATA IS STORED ANYWAY BASICALLY)
-        
-        for 
-        if context == "variable":
-            line_style
-            self.colour_index += 1
-            self.marker_index += 1
+        if degree_id is not None:
+            variable_style_dict = {}
+            line_styles_dict[degree_id] = [[], []]
+            
+            for column in self.error_data.error_df_dict[degree_id].columns:
+                if column != "h" and column != "Time taken":
+                    # Assuming the ID is of the form "variable norm"
+                    variable = column.split(" ")[0]
+                    norm = column.split(" ")[1]
 
-        elif context == "degree":
-            for error_norm in error_norms_dict:
-                # Assuming the ID is of the form "variable norm"
-                variable = error_norm.split(" ")[0]
-                
-                if variable not in self.variable_marker_dict:
-                    self.variable_marker_dict.update({variable: self.markers[self.marker_counter]})
-                    self.marker_counter += 1
+                    # Each variable has a fixed marker and colour
+                    if variable not in variable_style_dict:
+                        variable_style_dict.update({variable: [markers[marker_counter], colours[colour_counter]]})
+                        marker_counter += 1
+                        colour_counter += 1
+                        
+                    line_style = variable_style_dict[variable][0]
                     
-                line_style = self.variable_marker_dict[variable]
-                
-                if "L2" in error_norm:
-                    line_style += "-"
-                    
-                elif "H1" in error_norm:
-                    line_style += "--"
+                    # Each norm has a fixed line style
+                    if norm == "L2":
+                        line_style += lines[0]
+                        
+                    elif norm == "H1":
+                        line_style += lines[1]
+                        
+                    # Add combined degree and norm line styles to line styles dictionary
+                    line_styles_dict[degree_id][0].append(line_style)
+                    line_styles_dict[degree_id][1].append(variable_style_dict[variable][1])
 
-                self.line_styles_dict[error_norm] = line_style
+        if variable is not None and degree_id is None:
+            degree_style_dict = {}
+            
+            for degree_id, error_df in self.error_data.error_df_dict.items():
+                line_styles_dict[degree_id] = [[], None]
+                for column in error_df.columns:
+                    if column != "h" and column != "Time taken":
+                        # Assuming the ID is of the form "var norm"
+                        var = column.split(" ")[0]
+                        norm = column.split(" ")[1]
 
+                        if var == variable:
+                            # Each degree has a fixed marker and colour
+                            if degree_id not in degree_style_dict:
+                                degree_style_dict.update({degree_id: [markers[marker_counter], colours[colour_counter]]})
+                                marker_counter += 1
+                                colour_counter += 1
+                                
+                            line_style = degree_style_dict[degree_id][0]
+                            
+                            # Each norm has a fixed line style
+                            if norm == "L2":
+                                line_style += lines[0]
+                                
+                            elif norm == "H1":
+                                line_style += lines[1]
+
+                            # Add combined degree and norm line styles to line styles dictionary
+                            line_styles_dict[degree_id][0].append(line_style)
+                            line_styles_dict[degree_id][1] = degree_style_dict[degree_id][1]
 
         line_styles_dict.update(custom_style_dict)
         line_styles = list(line_styles_dict.values())
 
         return line_styles
+        

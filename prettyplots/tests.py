@@ -30,8 +30,8 @@ test_data = pp.BaseData(test_data_files)
 
 # Error file testing
 error_data = pp.ErrorData(test_data_files)
+error_data.update_norms(error_norms_dict)
+error_data.print_degree("p2")
 error_plots = pp.ErrorPlot(error_data)
-error_plots.update_legend(error_norms_dict)
-error_plots.plot_variable("p", "./test_data/results/error_plot_p.pdf")
-# error_plots.plot_degree("p2", "./test_data/results/error_plot_p2.pdf")
-print(error_plots.line_styles)
+error_plots.plot_variable("n", "./test_data/results/error_plot_n.pdf")
+error_plots.plot_degree("p2", "./test_data/results/error_plot_p2.pdf")
