@@ -146,7 +146,7 @@ class ErrorPlot(BasePlot):
         line_styles_dict = {}
         markers = ["o", "x", "^", "v", "d", "+"]
         # colours = ["blue", "orange", "green", "red", "purple", "pink"]
-        colours = ["#4ADC7B", "#E5B25D", "#85C7F2", "#B87D4B", "#336699", "#7D5BA6"]
+        colours = ["#3C9359", "#FF8800", "#5CA7D9", "#B87D4B", "#336699", "#7D5BA6"]
         lines = ["-", "--", ":", "-."]
         marker_counter = 0
         colour_counter = 0
