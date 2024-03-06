@@ -3,3 +3,4 @@ Pretty_Plots.egg-info/
 build/
 dist/
 prettyplots/test_data/results/
+*__pycache__/

@@ -3,7 +3,7 @@ import pandas as pd
 import os
 
 # Default style parameters
-plt.style.use("./default_style.mplstyle")
+# plt.style.use("./default_style.mplstyle")
 
 
 # TODO -- Initialise with dictionary of reference names and data files. This should
