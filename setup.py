@@ -2,7 +2,8 @@
 
 from setuptools import setup
 
-setup(name="NAPTools",
-      version="0.2",
-      packages=["src"],
+setup(name="naptools",
+      version="0.0.5",
+      packages=["naptools"],
+      package_dir={"":"src"}
       )
