@@ -2,7 +2,7 @@
 
 from setuptools import setup
 
-setup(name="Pretty Plots",
-      version="0.0",
-      packages=["prettyplots"],
+setup(name="NAPTools",
+      version="0.2",
+      packages=["src"],
       )

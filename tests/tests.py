@@ -3,10 +3,10 @@ import prettyplots as pp
 # Here I should run check the functions perform as expected on some test data
 
 test_data_files = {
-    "p1": "./test_data/errors_p1.csv",
-    "p2": "./test_data/errors_p2.csv",
-    "p3": "./test_data/errors_p3.csv",
-    "p4": "./test_data/errors_p4.csv",
+    "p1": "./data/errors_p1.csv",
+    "p2": "./data/errors_p2.csv",
+    "p3": "./data/errors_p3.csv",
+    "p4": "./data/errors_p4.csv",
     }
 
 error_norms_dict = {
@@ -25,7 +25,7 @@ test_data = pp.BaseData(test_data_files)
 # test_plot = pp.BasePlot(test_data)
 # test_plot.plot("h",
 #                ["p L2", "n L2", "p H1", "n H1"],
-#                "./test_data/results/error_plot_p1.pdf",
+#                "./results/error_plot_p1.pdf",
 #                parameters={"log-log": True, "grid": True})
 
 # Error file testing
@@ -33,6 +33,6 @@ error_data = pp.ErrorData(test_data_files)
 error_data.update_norms(error_norms_dict)
 error_data.print_degree("p2")
 error_plots = pp.ErrorPlot(error_data)
-error_plots.plot_variable("n", "./test_data/results/error_plot_n.pdf")
-error_plots.plot_degree("p1", "./test_data/results/error_plot_p1.pdf")
-error_plots.plot_degree("p2", "./test_data/results/error_plot_p2.pdf")
+error_plots.plot_variable("n", "./results/error_plot_n.pdf")
+error_plots.plot_degree("p1", "./results/error_plot_p1.pdf")
+error_plots.plot_degree("p2", "./results/error_plot_p2.pdf")
