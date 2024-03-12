@@ -3,7 +3,7 @@ import pandas as pd
 import re
 import numpy as np
 from scipy import stats
-from naptools import BaseData, BasePlot
+from naptools import BaseData, BasePlot, LineStyles
 
 
 class ErrorData(BaseData):
@@ -14,7 +14,7 @@ class ErrorData(BaseData):
         self.error_norms_dict = {}
 
     def update_norms(self, error_norms_dict, custom_style_dict={}):
-        """Update LaTeX norm notation"""
+        """Update LaTeX norm notation."""
         self.error_norms_dict = error_norms_dict
         
     def get_convergence(self, degree_id):
@@ -47,6 +47,12 @@ class ErrorPlot(BasePlot):
     def __init__(self, error_data):
         super().__init__(error_data)
         self.error_data = self.data
+        self.set_plotting_parameters()
+
+    def set_plotting_parameters(self):
+        """Set the default error plot parameters"""
+        self.parameters["log-log"] = True
+        self.parameters["grid"] = True
 
     def plot_degree(self, degree_id, output_filename, parameters={}):
         """Plot all errors for a single polynomial degree"""
@@ -54,16 +60,21 @@ class ErrorPlot(BasePlot):
         self.output_filename = output_filename
         self.fig, self.axs = plt.subplots()
         error_df = self.error_data.error_df_dict[degree_id]
-        line_styles = self.get_line_styles(degree_id=degree_id)
-        line_colours = [line_styles_degree[1] for line_styles_degree in line_styles][0]
-        line_styles = [line_styles_degree[0] for line_styles_degree in line_styles][0]
+
+        line_styles = LineStyles(self.data, degree_id=degree_id)
+        styles = line_styles.line_styles_by_degree()
+        colours = line_styles.colours_by_degree()
+        
+        # line_styles = self.get_line_styles(degree_id=degree_id)
+        # line_colours = [line_styles_degree[1] for line_styles_degree in line_styles][0]
+        # line_styles = [line_styles_degree[0] for line_styles_degree in line_styles][0]
         
         # Remove unnecessary columns from DataFrame
         plotting_df = error_df.set_index("h")
 
         plotting_df.drop(
             axis=1,
-            labels=["Time taken"],
+            labels=["Time taken"] + self.parameters["drop"],
             inplace=True,
         )
     
@@ -92,10 +103,10 @@ class ErrorPlot(BasePlot):
         self.output_filename = output_filename
         self.fig, self.axs = plt.subplots()
         
-        line_styles = self.get_line_styles(variable=variable)
-        line_colours = [line_styles_degree[1] for line_styles_degree in line_styles]
-        line_styles = [line_styles_degree[0] for line_styles_degree in line_styles]
-
+        line_styles = LineStyles(self.data, variable=variable)
+        styles = line_styles.line_styles_by_degree()
+        colours = line_styles.colours_by_degree()
+        
         for error_df_id, error_df in self.error_data.error_df_dict.items():
             # Remove unnecessary columns from DataFrame
             plotting_df = error_df.set_index("h")
@@ -107,7 +118,7 @@ class ErrorPlot(BasePlot):
             
             plotting_df.drop(
                 axis=1,
-                labels=["Time taken"] + columns_to_drop,
+                labels=["Time taken"] + columns_to_drop + self.parameters["drop"],
                 inplace=True,
             )
 
@@ -128,7 +139,12 @@ class ErrorPlot(BasePlot):
 
             # Create plot
             style_degree_index = int(re.findall(r"\d+", error_df_id)[0]) - 1
-            plotting_df.plot(ax=self.axs, style=line_styles[style_degree_index], color=line_colours[style_degree_index])
+
+            # HACK TO AVOID ERROR WHEN p1 IS NOT INCLUDED
+            while len(styles) <= style_degree_index:
+                style_degree_index = 0
+
+            plotting_df.plot(ax=self.axs, style=list(styles[style_degree_index]), color=list(colours[style_degree_index]))
 
         self.output()
 
@@ -136,83 +152,6 @@ class ErrorPlot(BasePlot):
         """Format and output plot to file"""
         plt.xlabel("$h$")
         plt.ylabel("Error")
-        self.parameters["log-log"] = True
-        self.parameters["grid"] = True
 
         super().output()
 
-    def get_line_styles(self, degree_id=None, variable=None, custom_style_dict={}):
-        """Returns line styles for plotting"""
-        line_styles_dict = {}
-        markers = ["o", "x", "^", "v", "d", "+"]
-        # colours = ["blue", "orange", "green", "red", "purple", "pink"]
-        colours = ["#3C9359", "#FF8800", "#5CA7D9", "#B87D4B", "#336699", "#7D5BA6"]
-        lines = ["-", "--", ":", "-."]
-        marker_counter = 0
-        colour_counter = 0
-
-        if degree_id is not None:
-            variable_style_dict = {}
-            line_styles_dict[degree_id] = [[], []]
-            
-            for column in self.error_data.error_df_dict[degree_id].columns:
-                if column != "h" and column != "Time taken":
-                    # Assuming the ID is of the form "variable norm"
-                    variable = column.split(" ")[0]
-                    norm = column.split(" ")[1]
-
-                    # Each variable has a fixed marker and colour
-                    if variable not in variable_style_dict:
-                        variable_style_dict.update({variable: [markers[marker_counter], colours[colour_counter]]})
-                        marker_counter += 1
-                        colour_counter += 1
-                        
-                    line_style = variable_style_dict[variable][0]
-                    
-                    # Each norm has a fixed line style
-                    if norm == "L2":
-                        line_style += lines[0]
-                        
-                    elif norm == "H1":
-                        line_style += lines[1]
-                        
-                    # Add combined degree and norm line styles to line styles dictionary
-                    line_styles_dict[degree_id][0].append(line_style)
-                    line_styles_dict[degree_id][1].append(variable_style_dict[variable][1])
-
-        if variable is not None and degree_id is None:
-            degree_style_dict = {}
-            
-            for degree_id, error_df in self.error_data.error_df_dict.items():
-                line_styles_dict[degree_id] = [[], None]
-                for column in error_df.columns:
-                    if column != "h" and column != "Time taken":
-                        # Assuming the ID is of the form "var norm"
-                        var = column.split(" ")[0]
-                        norm = column.split(" ")[1]
-
-                        if var == variable:
-                            # Each degree has a fixed marker and colour
-                            if degree_id not in degree_style_dict:
-                                degree_style_dict.update({degree_id: [markers[marker_counter], colours[colour_counter]]})
-                                marker_counter += 1
-                                colour_counter += 1
-                                
-                            line_style = degree_style_dict[degree_id][0]
-                            
-                            # Each norm has a fixed line style
-                            if norm == "L2":
-                                line_style += lines[0]
-                                
-                            elif norm == "H1":
-                                line_style += lines[1]
-
-                            # Add combined degree and norm line styles to line styles dictionary
-                            line_styles_dict[degree_id][0].append(line_style)
-                            line_styles_dict[degree_id][1] = degree_style_dict[degree_id][1]
-
-        line_styles_dict.update(custom_style_dict)
-        line_styles = list(line_styles_dict.values())
-
-        return line_styles
-        

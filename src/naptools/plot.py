@@ -35,10 +35,11 @@ class BasePlot:
     def __init__(self, data):
         self.data = data
 
-        # Default plotting parameters
+        # Default plotting parameters (alphabetical order)
         self.parameters = {
-            "log-log": False,
+            "drop": [],
             "grid": False,
+            "log-log": False,
         }
         
         # fig.set_figheight(self.plotting_params["figure_height"])
