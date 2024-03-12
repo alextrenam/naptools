@@ -3,7 +3,7 @@ import pandas as pd
 import re
 import numpy as np
 from scipy import stats
-from prettyplots import BaseData, BasePlot
+from naptools import BaseData, BasePlot
 
 
 class ErrorData(BaseData):

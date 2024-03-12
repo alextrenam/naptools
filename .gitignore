@@ -1,6 +1,4 @@
 # Auto-generated files
-Pretty_Plots.egg-info/
-build/
-dist/
-prettyplots/test_data/results/
+NAPTools.egg-info/
+tests/results/
 *__pycache__/

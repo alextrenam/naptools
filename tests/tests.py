@@ -1,4 +1,4 @@
-import prettyplots as pp
+import naptools as nap
 
 # Here I should run check the functions perform as expected on some test data
 
@@ -19,20 +19,20 @@ error_norms_dict = {
 }
 
 # Base file testing
-test_data = pp.BaseData(test_data_files)
+test_data = nap.BaseData(test_data_files)
 # test_data.print_data("p4")
 
-# test_plot = pp.BasePlot(test_data)
+# test_plot = nap.BasePlot(test_data)
 # test_plot.plot("h",
 #                ["p L2", "n L2", "p H1", "n H1"],
 #                "./results/error_plot_p1.pdf",
 #                parameters={"log-log": True, "grid": True})
 
 # Error file testing
-error_data = pp.ErrorData(test_data_files)
+error_data = nap.ErrorData(test_data_files)
 error_data.update_norms(error_norms_dict)
 error_data.print_degree("p2")
-error_plots = pp.ErrorPlot(error_data)
+error_plots = nap.ErrorPlot(error_data)
 error_plots.plot_variable("n", "./results/error_plot_n.pdf")
 error_plots.plot_degree("p1", "./results/error_plot_p1.pdf")
 error_plots.plot_degree("p2", "./results/error_plot_p2.pdf")
