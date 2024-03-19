@@ -61,7 +61,7 @@ class ErrorPlot(BasePlot):
         self.fig, self.axs = plt.subplots()
         error_df = self.error_data.error_df_dict[degree_id]
 
-        line_styles = LineStyles(self.data, degree_id=degree_id)
+        line_styles = LineStyles(self.data, degree_id=degree_id, drop=self.parameters["drop"])
         styles = line_styles.line_styles_by_degree()
         colours = line_styles.colours_by_degree()
         
@@ -84,6 +84,11 @@ class ErrorPlot(BasePlot):
             # Calculate line slope for showing convergence rates on plot
             slope = stats.linregress(np.log2(error_df["h"]), np.log2(error_df[error]))[0]
 
+            # Slope calculation using only the final two values
+            final_h_values = error_df["h"][-2:]
+            final_error_values = error_df[error][-2:]
+            slope_final = stats.linregress(np.log2(final_h_values), np.log2(final_error_values))[0]
+                
             # Relabel the columns to the correct LaTeX norm notation
             renaming_columns[error] = fr"{error_norm}" + f", Slope (EOC): {slope:.3f}"
         
@@ -94,7 +99,7 @@ class ErrorPlot(BasePlot):
         )
 
         # Create plot
-        plotting_df.plot(ax=self.axs, style=line_styles, color=line_colours)
+        plotting_df.plot(ax=self.axs, style=list(styles[0]), color=list(colours[0]))
         self.output()
     
     def plot_variable(self, variable, output_filename, parameters={}):
@@ -103,7 +108,7 @@ class ErrorPlot(BasePlot):
         self.output_filename = output_filename
         self.fig, self.axs = plt.subplots()
         
-        line_styles = LineStyles(self.data, variable=variable)
+        line_styles = LineStyles(self.data, variable=variable, drop=self.parameters["drop"])
         styles = line_styles.line_styles_by_degree()
         colours = line_styles.colours_by_degree()
         
@@ -127,9 +132,14 @@ class ErrorPlot(BasePlot):
             for error, error_norm in self.error_data.error_norms_dict.items():
                 # Calculate line slope for showing convergence rates on plot
                 slope = stats.linregress(np.log2(error_df["h"]), np.log2(error_df[error]))[0]
+
+                # Slope calculation using only the final two values
+                final_h_values = error_df["h"][-2:]
+                final_error_values = error_df[error][-2:]
+                slope_final = stats.linregress(np.log2(final_h_values), np.log2(final_error_values))[0]
                 
                 # Relabel the columns to the correct LaTeX norm notation
-                renaming_columns[error] = f"{error_df_id}, " + fr"{error_norm}, " + f"EOC: {slope:.3f}"
+                renaming_columns[error] = f"{error_df_id}, " + fr"{error_norm}, " + f"EOC: {slope_final:.3f}"
                 
             # Rename columns for correct plot labels
             plotting_df.rename(
