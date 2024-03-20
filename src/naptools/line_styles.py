@@ -1,35 +1,41 @@
 import numpy as np
 
+
 class LineStyles:
     """Class for controlling the style of lines in plots. The line styles are
     stored as numpy arrays with each line style consisting in the format
     [marker, colour, line style]."""
-    def __init__(self, data, degree_id=None, variable=None, drop=None, custom_style_dict={}):
+    def __init__(self, data, variables, degree_ids, drop=None, custom_style_dict={}):
         self.data = data
-        self.degree_id = degree_id
-        self.variable = variable
+        if type(variables) is str:
+            self.variables = [variables]
+        else:
+            self.variables = variables
+        if type(degree_ids) is str:
+            self.degree_ids = [degree_ids]
+        else:
+            self.degree_ids = degree_ids
         self.drop = drop
         self.markers = ["o", "x", "^", "v", "d", "+", "<", ">", "s", "*", "|", "_"]
         self.colours = ["#3C9359", "#FF8800", "#5CA7D9", "#B87D4B", "#336699", "#7D5BA6",
                    "blue", "orange", "green", "red", "purple", "pink"]
         self.lines = ["-", "--", ":", "-.", (0, (5, 5)), (0, (3, 5, 1, 5, 1, 5)), (0, (1, 10))]
 
-        # CUSTOM STYLE DICT STUFF NEEDS SORTING
+        # Set default style and update if appropriate
+        self.style_dict = {
+            "marker": "variable",
+            "colour": "degree",
+            "line": "norm",
+        }
+        self.style_dict.update(custom_style_dict)
 
-        if self.degree_id is not None:
-            if self.variable is not None:
-                self.context = "degree_variable"
-            else:
-                self.context = "degree"
-        else:
-            self.context = "variable"
-
-        df_columns = next(iter(data.error_df_dict.values())).columns
-        
         self.variable_list = []
         self.norm_list = []
         self.relevant_columns = []
         self.relevant_norm_list = []
+        self.relevant_variable_list = []
+
+        df_columns = next(iter(data.error_df_dict.values())).columns
 
         for column in df_columns:
             if column != "h" and column != "Time taken" and column not in self.drop:
@@ -40,98 +46,89 @@ class LineStyles:
                 self.variable_list.append(variable)
                 self.norm_list.append(norm)
 
-                if "variable" in self.context:
-                    if self.variable + " " in column:
+                for var in self.variables:
+                    if var + " " in column:
                         self.relevant_columns.append(column)
                         self.relevant_norm_list.append(norm)
-                else:
-                    self.relevant_columns.append(column)
-                    self.relevant_norm_list.append(norm)
+                        self.relevant_variable_list.append(variable)
                         
-        if self.context == "degree_variable":
-            self.num_degrees = 1
-            self.num_styles_per_degree = len(self.relevant_columns)
-        elif self.context == "degree":
-            self.num_degrees = 1
-            self.num_styles_per_degree = len(self.relevant_columns)
-        elif self.context == "variable":
-            self.num_degrees = len(self.data.error_df_dict)
-            self.num_styles_per_degree = len(self.relevant_columns)
+        # Set up dictionary for handling style controls
+        self.controls_dict = {}
+        
+        for control_id, control in self.style_dict.items():
+            if control == "degree":
+                control_list = self.degree_ids
+            elif control == "variable":
+                control_list = self.variables
+            elif control == "norm":
+                control_list = self.norm_list
             
+            self.controls_dict[control_id] = control_list
+
+        self.marker_control_list = self.controls_dict["marker"]
+        self.colour_control_list = self.controls_dict["colour"]
+        self.line_control_list = self.controls_dict["line"]
+
+        self.num_degrees = len(self.degree_ids)
+        self.num_styles_per_degree = len(self.relevant_columns)
+        
         self.style_array = self.get_style_array()
         self.line_styles = self.get_line_styles(self.style_array)
-
 
     def get_style_array(self):
         """Returns a numpy array containing the indexes [marker, colour, line style]"""
         # Initialise style array
         style_array = np.zeros((self.num_degrees, self.num_styles_per_degree, 3), dtype=int)
         
-        # Fix line style for norms
-        norm_dict = {}
-        norm_counter = 0
-        degree_index = 0
-        style_index = 0
+        # Loop over styles to populate style array
+        for style in self.style_dict.keys():
+            # Initialise some variables
+            control_dict = {}
+            counter = 0
+            iterator = 0
 
-        for norm in self.relevant_norm_list:
-            if norm not in norm_dict:
-                style_array[:, style_index, 2] = norm_counter
-                norm_dict[norm] = norm_counter
+            # Get correct column for given style ([marker, colour, line])
+            if style == "marker":
+                style_column_index = 0
+            elif style == "colour":
+                style_column_index = 1
+            elif style == "line":
+                style_column_index = 2
 
-                norm_counter += 1
-            else:
-                style_array[:, style_index, 2] = norm_dict[norm]
+            # Set up tools for moving through iterations
+            if self.style_dict[style] == "degree":
+                degree_index = lambda: iterator
+                row_index = lambda: slice(None)
+                column_index = lambda: style_column_index
+                control_list = self.degree_ids
                 
-            style_index += 1
+            elif self.style_dict[style] == "variable":
+                degree_index = lambda: slice(None)
+                row_index = lambda: iterator
+                column_index = lambda: style_column_index
+                control_list = self.relevant_variable_list
+                
+            elif self.style_dict[style] == "norm":
+                degree_index = lambda: slice(None)
+                row_index = lambda: iterator
+                column_index = lambda: style_column_index
+                control_list = self.relevant_norm_list
 
-        # Loop over variables if the context is degree
-        if self.context == "degree":
-            variable_dict = {}
-            style_index = 0
-            marker_counter = 0
-            colour_counter = 0
-
-            for variable in self.variable_list:
-                if variable not in variable_dict:
-                    style_array[0, style_index, 0] = marker_counter
-                    style_array[0, style_index, 1] = colour_counter
-                    variable_dict[variable] = [marker_counter, colour_counter]
+            # Loop over controls to populate style array
+            for control in control_list:
+                if control not in control_dict:
+                    style_array[degree_index(), row_index(), column_index()] = counter
+                    control_dict[control] = counter
                     
-                    marker_counter += 1
-                    colour_counter += 1
+                    counter += 1
                     
                 else:
-                    style_array[0, style_index, 0] = variable_dict[variable][0]
-                    style_array[0, style_index, 1] = variable_dict[variable][1]
+                    style_array[degree_index(), row_index(), column_index()] = control_dict[control]
                     
-                style_index += 1
+                iterator += 1
 
-        # Loop over polynomial degree if the context is variable
-        if self.context == "variable":
-            degree_id_dict = {}
-            degree_index = 0
-            marker_counter = 0
-            colour_counter = 0
-
-            for degree_id in self.data.error_df_dict.keys():
-                for style_index in range(self.num_styles_per_degree):
-                    if degree_id not in degree_id_dict:
-                        style_array[degree_index, style_index, 0] = marker_counter
-                        style_array[degree_index, style_index, 1] = colour_counter
-                        degree_id_dict[degree_id] = [marker_counter, colour_counter]
-                        
-                        marker_counter += 1
-                        colour_counter += 1
-                        
-                    else:
-                        style_array[degree_index, style_index, 0] = degree_id_dict[degree_id][0]
-                        style_array[degree_index, style_index, 1] = degree_id_dict[degree_id][1]
-                        
-                    style_index += 1
-                degree_index += 1
-                 
         return style_array
-
+            
     def colours_by_degree(self):
         colour_index_array = self.style_array[:, :, 1].flatten()
         colours_array = []

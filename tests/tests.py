@@ -18,6 +18,10 @@ error_norms_dict = {
     "psi H1": r"$|\!|\nabla\!\left(\psi - \psi_h\right)|\!|$",
 }
 
+plotting_params = {
+    "custom_style_dict": {"marker": "degree", "colour": "variable", "line": "norm"}
+}
+
 # Base file testing
 test_data = nap.BaseData(test_data_files)
 # test_data.print_data("p4")
@@ -28,11 +32,17 @@ test_data = nap.BaseData(test_data_files)
 #                "./results/error_plot_p1.pdf",
 #                parameters={"log-log": True, "grid": True})
 
-# Error file testing
+# Error data operations
 error_data = nap.ErrorData(test_data_files)
 error_data.update_norms(error_norms_dict)
 error_data.print_degree("p2")
+
+# Error plots
 error_plots = nap.ErrorPlot(error_data)
-error_plots.plot_variable("n", "./results/error_plot_n.pdf")
-error_plots.plot_degree("p1", "./results/error_plot_p1.pdf")
-error_plots.plot_degree("p2", "./results/error_plot_p2.pdf")
+error_plots.plot(["p", "n", "psi"], "p1", "./results/error_plot_p1.pdf")
+error_plots.plot(["p", "n", "psi"], "p2", "./results/error_plot_p2.pdf")
+error_plots.plot(["n", "psi"],
+                 ["p1", "p2", "p3", "p4"],
+                 "./results/error_plot_n_psi.pdf",
+                 parameters=plotting_params)
+error_plots.plot("n", ["p1", "p2", "p3", "p4"], "./results/error_plot_n.pdf")

@@ -53,74 +53,43 @@ class ErrorPlot(BasePlot):
         """Set the default error plot parameters"""
         self.parameters["log-log"] = True
         self.parameters["grid"] = True
+        self.parameters["custom_style_dict"] = {}
 
-    def plot_degree(self, degree_id, output_filename, parameters={}):
-        """Plot all errors for a single polynomial degree"""
-        self.parameters.update(parameters)
-        self.output_filename = output_filename
-        self.fig, self.axs = plt.subplots()
-        error_df = self.error_data.error_df_dict[degree_id]
-
-        line_styles = LineStyles(self.data, degree_id=degree_id, drop=self.parameters["drop"])
-        styles = line_styles.line_styles_by_degree()
-        colours = line_styles.colours_by_degree()
-        
-        # line_styles = self.get_line_styles(degree_id=degree_id)
-        # line_colours = [line_styles_degree[1] for line_styles_degree in line_styles][0]
-        # line_styles = [line_styles_degree[0] for line_styles_degree in line_styles][0]
-        
-        # Remove unnecessary columns from DataFrame
-        plotting_df = error_df.set_index("h")
-
-        plotting_df.drop(
-            axis=1,
-            labels=["Time taken"] + self.parameters["drop"],
-            inplace=True,
-        )
-    
-        renaming_columns = {}
-        
-        for error, error_norm in self.error_data.error_norms_dict.items():
-            # Calculate line slope for showing convergence rates on plot
-            slope = stats.linregress(np.log2(error_df["h"]), np.log2(error_df[error]))[0]
-
-            # Slope calculation using only the final two values
-            final_h_values = error_df["h"][-2:]
-            final_error_values = error_df[error][-2:]
-            slope_final = stats.linregress(np.log2(final_h_values), np.log2(final_error_values))[0]
-                
-            # Relabel the columns to the correct LaTeX norm notation
-            renaming_columns[error] = fr"{error_norm}" + f", Slope (EOC): {slope:.3f}"
-        
-        # Rename columns for correct plot labels
-        plotting_df.rename(
-            columns=renaming_columns,
-            inplace=True,
-        )
-
-        # Create plot
-        plotting_df.plot(ax=self.axs, style=list(styles[0]), color=list(colours[0]))
-        self.output()
-    
-    def plot_variable(self, variable, output_filename, parameters={}):
-        """Plot errors of all polynomial degree for the given variable"""
+    def plot(self, variables, degree_ids, output_filename, parameters={}):
+        """Plot the errors for the given variables at the given polynomial degrees"""
         self.parameters.update(parameters)
         self.output_filename = output_filename
         self.fig, self.axs = plt.subplots()
         
-        line_styles = LineStyles(self.data, variable=variable, drop=self.parameters["drop"])
+        if type(variables) is str:
+            variables = [variables]
+            
+        if type(degree_ids) is str:
+            degree_ids = [degree_ids]
+            
+        relevant_error_dfs = [self.error_data.error_df_dict[degree_id] for degree_id in degree_ids]
+        relevant_error_dfs_dict = dict(zip(degree_ids, relevant_error_dfs))
+
+        line_styles = LineStyles(self.data, variables, degree_ids,
+                                 drop=self.parameters["drop"],
+                                 custom_style_dict=self.parameters["custom_style_dict"])
         styles = line_styles.line_styles_by_degree()
         colours = line_styles.colours_by_degree()
+        style_degree_index = 0
         
-        for error_df_id, error_df in self.error_data.error_df_dict.items():
+        for error_df_id, error_df in relevant_error_dfs_dict.items():
             # Remove unnecessary columns from DataFrame
             plotting_df = error_df.set_index("h")
             columns_to_drop = []
 
-            for col in plotting_df.columns:
-                if variable + " " not in col:
-                    columns_to_drop.append(col)
-            
+            for column in plotting_df.columns:
+                # Assuming the ID is of the form "variable norm"
+                variable = column.split(" ")[0]
+                norm = column.split(" ")[1]
+                
+                if variable not in variables:
+                    columns_to_drop.append(column)
+                     
             plotting_df.drop(
                 axis=1,
                 labels=["Time taken"] + columns_to_drop + self.parameters["drop"],
@@ -148,16 +117,11 @@ class ErrorPlot(BasePlot):
             )
 
             # Create plot
-            style_degree_index = int(re.findall(r"\d+", error_df_id)[0]) - 1
-
-            # HACK TO AVOID ERROR WHEN p1 IS NOT INCLUDED
-            while len(styles) <= style_degree_index:
-                style_degree_index = 0
-
             plotting_df.plot(ax=self.axs, style=list(styles[style_degree_index]), color=list(colours[style_degree_index]))
+            style_degree_index += 1
 
         self.output()
-
+        
     def output(self):
         """Format and output plot to file"""
         plt.xlabel("$h$")

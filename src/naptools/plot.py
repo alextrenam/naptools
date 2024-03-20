@@ -3,7 +3,8 @@ import pandas as pd
 import os
 
 # Default style parameters
-# plt.style.use("./default_style.mplstyle")
+naptools_dir_path = os.path.dirname(os.path.realpath(__file__))
+plt.style.use(naptools_dir_path + "/naptools_default.mplstyle")
 
 
 # TODO -- Initialise with dictionary of reference names and data files. This should
