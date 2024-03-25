@@ -3,7 +3,7 @@
 from setuptools import setup
 
 setup(name="naptools",
-      version="0.0.5",
+      version="0.5.0",
       packages=["naptools"],
       package_dir={"":"src"}
       )

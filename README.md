@@ -7,3 +7,12 @@ To allow for local import from anywhere run the following command from the repos
 
 If you wish to edit the source code and test without needing to reinstall each time, run:
 `pip install -e .`
+
+# Version Roadmap
+Here's what you can expect from the planned upcoming versions of the package:
+- 0.5.0: Basic plots and error plots
+- 0.6.0: Legend manipulation
+- 0.7.0: Contour plots (e.g. for plotting solution profiles)
+- 0.8.0: Multi-plots (on both a single and multiple axes)
+- 0.9.0: Extended parameter set for easy customisation
+- 1.0.0: All initial features implemented
