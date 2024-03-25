@@ -52,7 +52,7 @@ class ErrorPlot(BasePlot):
     def set_plotting_parameters(self):
         """Set the default error plot parameters"""
         self.parameters["log-log"] = True
-        self.parameters["grid"] = True
+        self.parameters["grid"] = False
         self.parameters["custom_style_dict"] = {}
 
     def plot(self, variables, degree_ids, output_filename, parameters={}):
