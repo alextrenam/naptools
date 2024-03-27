@@ -1,5 +1,17 @@
+import numpy as np
+from naptools import BaseData, BasePlot
+
 
 class ContourPlot(BasePlot):
+    """Class for creating error plots based on the underlying error data"""
+    def __init__(self, contour_data):
+        super().__init__(contour_data)
+        self.contour_data = self.data
+        self.set_plotting_parameters()
+
+    def set_plotting_parameters(self):
+        """Set the default contour plot parameters"""
+        
     # Output files names are sanitised input file names
     self.filename_start = re.split(r"\d+", self.input_data[0])[0]
     self.filename_start = self.filename_start.split("data")[0]
