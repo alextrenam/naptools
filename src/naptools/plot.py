@@ -44,6 +44,7 @@ class BasePlot:
             "drop": [],
             "grid": False,
             "log-log": False,
+            "suppress_legend": False,
         }
 
         # fig.set_figheight(self.plotting_params["figure_height"])
