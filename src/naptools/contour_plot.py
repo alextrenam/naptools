@@ -43,6 +43,8 @@ class ContourPlot(BasePlot):
         self.parameters["separate_colour_bar"] = False
         self.parameters["suppress_legend"] = True
         self.parameters["symlognorm_linear_width"] = 0.01
+        self.parameters["thick_contour_line_thickness"] = 0.5
+        self.parameters["thin_contour_line_thickness"] = 0.05
         self.parameters["x_label"] = "$x$"
         self.parameters["y_label"] = "$y$"
 
@@ -153,7 +155,7 @@ class ContourPlot(BasePlot):
                 self.thick_contour_levels,
                 alpha=0.5,
                 colors=["1."],
-                linewidths=[0.5],
+                linewidths=[self.parameters["thick_contour_line_thickness"]],
             )
             self.axs.tricontour(
                 Xi,
@@ -162,7 +164,7 @@ class ContourPlot(BasePlot):
                 self.contour_levels,
                 alpha=0.15,
                 colors=["1."],
-                linewidths=[0.05],
+                linewidths=[self.parameters["thick_contour_line_thickness"]],
             )
             
             # Remove axis ticks
@@ -203,9 +205,11 @@ class ContourPlot(BasePlot):
         
         if self.parameters["colour_bar_location"] in ["top", "bottom"]:
             cbar.ax.xaxis.set_ticks_position(self.parameters["colour_bar_location"])
+            cbar.ax.get_xticklabels()[0].set_horizontalalignment("left")
+            cbar.ax.get_xticklabels()[1].set_horizontalalignment("right")
         else:
             cbar.ax.yaxis.set_ticks_position(self.parameters["colour_bar_location"])
-
+            
     def make_separate_colour_bar(self, variable):
         
         dummy_fig, dummy_axs = plt.subplots()  # To avoid deleting other axes
@@ -235,9 +239,9 @@ class ContourPlot(BasePlot):
         """Format and output plot to file"""
         plt.xlabel(self.parameters["x_label"])
         plt.ylabel(self.parameters["y_label"])
-        plt.tick_params(labelsize=self.parameters["font_size"])
-        # self.fig.set_figheight(self.parameters["figure_height"])
-        # self.fig.set_figwidth(self.parameters["figure_width"])
+        # plt.tick_params(labelsize=self.parameters["font_size"])
+        self.fig.set_figheight(self.parameters["figure_height"])
+        self.fig.set_figwidth(self.parameters["figure_width"])
         self.axs.axes.set_aspect("equal")
 
         super().output()

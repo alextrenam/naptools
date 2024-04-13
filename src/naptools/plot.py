@@ -47,9 +47,6 @@ class BasePlot:
             "suppress_legend": False,
         }
 
-        # fig.set_figheight(self.plotting_params["figure_height"])
-        # fig.set_figwidth(self.plotting_params["figure_width"])
-
     def plot(self, independent_vars, dependent_vars, output_filename, parameters={}):
         """Plot the given independent and dependent variables"""
         self.parameters.update(parameters)
@@ -64,13 +61,10 @@ class BasePlot:
     def output(self):
         """Format and output plot to file"""
         self.resolve_parameters()
-        self.fig.tight_layout()
-
-        if not self.parameters["suppress_legend"]:
-            plt.legend()
+        # self.fig.tight_layout() #INCLUDED IN SAVEFIG BELOW
 
         os.makedirs(os.path.dirname(self.output_filename), exist_ok=True)
-        plt.savefig(self.output_filename)
+        plt.savefig(self.output_filename, bbox_inches="tight")
         plt.close()
         print(f"Results plotted as: {self.output_filename}")
 
@@ -82,3 +76,6 @@ class BasePlot:
 
         if self.parameters["grid"]:
             plt.grid(which="both", color="#cfcfcf")
+
+        if not self.parameters["suppress_legend"]:
+            plt.legend()
