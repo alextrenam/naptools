@@ -35,6 +35,7 @@ class ContourPlot(BasePlot):
         """Set the default contour plot parameters"""
         # Default parameters (alphabetical order)
         self.parameters["colour_bar_font_size"] = 0.75 * 32  # Should be 0.75 * font_size
+        self.parameters["colour_bar_format"] = "%.5f"
         self.parameters["colour_bar_location"] = "right"
         self.parameters["colour_map"] = cm.plasma
         self.parameters["individual_colour_bar"] = True
@@ -114,7 +115,9 @@ class ContourPlot(BasePlot):
             # May have to hard code these to get them to look good, or at
             # least format them properly.
             xx_ticks = [float(values.min()), float(values.max())]
-            xx_labels = [str(float(values.min())), str(float(values.max()))]
+            c_bar_format = self.parameters["colour_bar_format"]
+            xx_labels = [f"{float(values.min()):{c_bar_format}}",
+                         f"{float(values.max()):{c_bar_format}}"]
             
             # Note: depending on your data, you may want to choose a different
             # norm and set logarithmic = False in the above. There are norms
@@ -180,21 +183,28 @@ class ContourPlot(BasePlot):
 
     def make_colour_bar(self, fig, axs, variable, contour, ticks, labels):
         """Add and format colour bar"""
+        divider = make_axes_locatable(axs)
+        cax = divider.append_axes(self.parameters["colour_bar_location"],
+                                  size="5%",
+                                  pad=0.05)
+        
         if self.parameters["colour_bar_location"] in ["top", "bottom"]:
             colour_bar_orientation = "horizontal"
         else:
             colour_bar_orientation = "vertical"
             
-        divider = make_axes_locatable(axs)
-        cax = divider.append_axes(self.parameters["colour_bar_location"],
-                                  size="5%",
-                                  pad=0.05)
         cbar = plt.colorbar(contour,
                             cax=cax,
                             label=rf"${variable}$",
-                            orientation=colour_bar_orientation,)
+                            orientation=colour_bar_orientation,
+                            )
         cbar.set_ticks(ticks=ticks, labels=labels)
         cbar.ax.tick_params(labelsize=self.parameters["colour_bar_font_size"])
+        
+        if self.parameters["colour_bar_location"] in ["top", "bottom"]:
+            cbar.ax.xaxis.set_ticks_position(self.parameters["colour_bar_location"])
+        else:
+            cbar.ax.yaxis.set_ticks_position(self.parameters["colour_bar_location"])
 
     def make_separate_colour_bar(self, variable):
         
