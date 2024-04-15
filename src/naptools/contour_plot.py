@@ -199,6 +199,7 @@ class ContourPlot(BasePlot):
                             cax=cax,
                             label=rf"${variable}$",
                             orientation=colour_bar_orientation,
+                            # spacing="proportional",
                             )
         cbar.set_ticks(ticks=ticks, labels=labels)
         cbar.ax.tick_params(labelsize=self.parameters["colour_bar_font_size"])
