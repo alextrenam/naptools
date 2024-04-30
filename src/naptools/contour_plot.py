@@ -262,8 +262,8 @@ class ContourPlot(BasePlot):
         
     def output(self):
         """Format and output plot to file"""
-        plt.xlabel(self.parameters["x_label"])
-        plt.ylabel(self.parameters["y_label"])
+        # plt.xlabel(self.parameters["x_label"])
+        # plt.ylabel(self.parameters["y_label"])
         # plt.tick_params(labelsize=self.parameters["font_size"])
         self.fig.set_figheight(self.parameters["figure_height"])
         self.fig.set_figwidth(self.parameters["figure_width"])

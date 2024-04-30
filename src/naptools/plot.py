@@ -7,11 +7,7 @@ naptools_dir_path = os.path.dirname(os.path.realpath(__file__))
 plt.style.use(naptools_dir_path + "/naptools_default.mplstyle")
 
 
-# TODO -- Initialise with dictionary of reference names and data files. This should
-#         unify the error plotting with plotting in general. For many data files maybe
-#         this requires some more thinking.
-#
-#      -- Setup some default parameter choices for easily reading one, two, three, four
+# TODO -- Setup some default parameter choices for easily reading one, two, three, four
 #         plots next to each other in a LaTeX document.
 
 
@@ -60,6 +56,9 @@ class BasePlot:
 
     def output(self):
         """Format and output plot to file"""
+        plt.xlabel(self.parameters["x_label"])
+        plt.ylabel(self.parameters["y_label"])
+        
         self.resolve_parameters()
         # self.fig.tight_layout() #INCLUDED IN SAVEFIG BELOW
 

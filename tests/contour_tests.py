@@ -37,7 +37,7 @@ series_plotting_params = {
     "individual_colour_bar": True,
     "symlognorm_linear_width": 0.1,
     "colour_bar_location": "right",
-    "mask_conditions": mask_conditions
+    "mask_conditions": mask_conditions,
 }
 # ============================================================================
 #
