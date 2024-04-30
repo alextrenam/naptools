@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.tri as tri
 from matplotlib import cm, ticker, colors
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from naptools import BaseData, BasePlot
@@ -35,10 +36,11 @@ class ContourPlot(BasePlot):
         """Set the default contour plot parameters"""
         # Default parameters (alphabetical order)
         self.parameters["colour_bar_font_size"] = 0.75 * 32  # Should be 0.75 * font_size
-        self.parameters["colour_bar_format"] = "%.5f"
+        self.parameters["colour_bar_format"] = ".5f"
         self.parameters["colour_bar_location"] = "right"
         self.parameters["colour_map"] = cm.plasma
         self.parameters["individual_colour_bar"] = True
+        self.parameters["mask_conditions"] = None
         self.parameters["num_thin_lines"] = 5
         self.parameters["separate_colour_bar"] = False
         self.parameters["suppress_legend"] = True
@@ -54,6 +56,24 @@ class ContourPlot(BasePlot):
         self.parameters["figure_height"] = 6.0
         self.parameters["figure_width"] = 6.0
 
+    def generate_mask(self, plotting_data, mask_conditions):
+        """Generate a mask for plotting data from non-convex domains"""
+        # Create triangulation from data
+        triangulation = tri.Triangulation(plotting_data[0], plotting_data[1])
+
+        # The mask includes triangles or not based on their barycentre
+        # The x and y variables defined here are the coordinates that should
+        # be refered to in the mask conditions
+        x = plotting_data[0].to_numpy()[triangulation.triangles].mean(axis=1)
+        y = plotting_data[1].to_numpy()[triangulation.triangles].mean(axis=1)
+
+        # Create and apply mask
+        if mask_conditions is not None:
+            mask = np.where(eval(mask_conditions), 0, 1)
+            triangulation.set_mask(mask)
+
+        return triangulation
+        
     def compute_levels(self, num_levels, logarithmic=False):
         """Return an array of values scaled evenly (or logarithmically)"""
 
@@ -112,6 +132,9 @@ class ContourPlot(BasePlot):
             # coordinates with the following
             Xi = data_df["Points:0"]
             Yi = data_df["Points:1"]
+
+            triangulation = self.generate_mask([Xi, Yi], self.parameters["mask_conditions"])
+            
             values = data_df[variable]
             
             # May have to hard code these to get them to look good, or at
@@ -133,8 +156,9 @@ class ContourPlot(BasePlot):
             # can't be applied. It works by defining a triangulation from
             # (x, y) then interpolating z.
             contour = self.axs.tricontourf(
-                Xi,
-                Yi,
+                # Xi,
+                # Yi,
+                triangulation,
                 values,
                 self.colour_levels,
                 # norm=colors.LogNorm(),

@@ -21,12 +21,23 @@ single_plotting_params = {
     "y_label": "$v$",
 }
 
+condition_1 = "(x > 0.0) & (y < 0.0)"
+condition_2 = "(x < 0.0) & (y > 0.0)"
+condition_3 = "((2.0 * x)**2 + (y)**2 < 0.5)"
+
+mask_conditions = (
+    condition_1 + " | "
+    + condition_2 + " | "
+    + condition_3
+)
+
 series_plotting_params = {
     "y_label": "$v$",
     "separate_colour_bar": True,
     "individual_colour_bar": True,
     "symlognorm_linear_width": 0.1,
     "colour_bar_location": "right",
+    "mask_conditions": mask_conditions
 }
 # ============================================================================
 #
