@@ -51,9 +51,11 @@ class ErrorPlot(BasePlot):
 
     def set_plotting_parameters(self):
         """Set the default error plot parameters"""
-        self.parameters["log-log"] = True
-        self.parameters["grid"] = False
         self.parameters["custom_style_dict"] = {}
+        self.parameters["grid"] = False
+        self.parameters["log-log"] = True
+        self.parameters["x_label"] = "$h$"
+        self.parameters["y_label"] = "Error"
 
     def plot(self, variables, degree_ids, output_filename, parameters={}):
         """Plot the errors for the given variables at the given polynomial degrees"""
@@ -124,8 +126,6 @@ class ErrorPlot(BasePlot):
         
     def output(self):
         """Format and output plot to file"""
-        plt.xlabel("$h$")
-        plt.ylabel("Error")
 
         super().output()
 

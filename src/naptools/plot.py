@@ -41,6 +41,8 @@ class BasePlot:
             "grid": False,
             "log-log": False,
             "suppress_legend": False,
+            "x_label": None,
+            "y_label": None,
         }
 
     def plot(self, independent_vars, dependent_vars, output_filename, parameters={}):

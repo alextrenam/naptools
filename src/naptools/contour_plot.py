@@ -218,16 +218,18 @@ class ContourPlot(BasePlot):
             colour_bar_orientation = "horizontal"
         else:
             colour_bar_orientation = "vertical"
-            
-        cbar = plt.colorbar(contour,
+
+        cbar = fig.colorbar(contour,
                             cax=cax,
                             label=rf"${variable}$",
                             orientation=colour_bar_orientation,
                             # spacing="proportional",
                             )
-        cbar.set_ticks(ticks=ticks, labels=labels)
+        cbar.set_ticks(ticks=ticks, labels=labels)  # labels=labels prevents pretty scientific notation
+        # cbar.formatter.set_powerlimits((-2, 2))
+        # cbar.formatter.set_useMathText(True)
         cbar.ax.tick_params(labelsize=self.parameters["colour_bar_font_size"])
-        
+                
         if self.parameters["colour_bar_location"] in ["top", "bottom"]:
             cbar.ax.xaxis.set_ticks_position(self.parameters["colour_bar_location"])
             cbar.ax.get_xticklabels()[0].set_horizontalalignment("left")
@@ -262,8 +264,6 @@ class ContourPlot(BasePlot):
         
     def output(self):
         """Format and output plot to file"""
-        # plt.xlabel(self.parameters["x_label"])
-        # plt.ylabel(self.parameters["y_label"])
         # plt.tick_params(labelsize=self.parameters["font_size"])
         self.fig.set_figheight(self.parameters["figure_height"])
         self.fig.set_figwidth(self.parameters["figure_width"])
