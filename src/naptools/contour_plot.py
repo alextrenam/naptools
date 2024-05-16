@@ -18,9 +18,16 @@ class ContourData(BaseData):
         data_limits = np.zeros((len(self.contour_df_dict), 2))
         i = 0
 
-        for df in self.contour_df_dict.values():
-            data_limits[i] = [df[variable].min(), df[variable].max()]
-            i += 1
+        if "magnitude" in variable:
+            for df in self.contour_df_dict.values():
+                df_magnitudes = np.sqrt(df.iloc[:, 0]**2 + df.iloc[:, 1]**2 + df.iloc[:, 2]**2)
+                data_limits[i] = [df_magnitudes.min(), df_magnitudes.max()]
+                i += 1
+
+        else:
+            for df in self.contour_df_dict.values():
+                data_limits[i] = [df[variable].min(), df[variable].max()]
+                i += 1
 
         return data_limits
 
@@ -91,6 +98,7 @@ class ContourPlot(BasePlot):
         self.base_output_filename, self.file_extension = os.path.splitext(output_filename)
 
         self.data_limits = self.contour_data.get_data_limits(variable)
+
         self.total_data_min = self.data_limits[:, 0].min()
         self.total_data_max = self.data_limits[:, 1].max()
 
@@ -134,8 +142,12 @@ class ContourPlot(BasePlot):
             Yi = data_df["Points:1"]
 
             triangulation = self.generate_mask([Xi, Yi], self.parameters["mask_conditions"])
-            
-            values = data_df[variable]
+
+            if "magnitude" in variable:
+                values = np.sqrt(data_df.iloc[:, 0]**2 + data_df.iloc[:, 1]**2 + data_df.iloc[:, 2]**2)
+
+            else:
+                values = data_df[variable]
             
             # May have to hard code these to get them to look good, or at
             # least format them properly.

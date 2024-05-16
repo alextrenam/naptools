@@ -40,6 +40,8 @@ class BasePlot:
             "drop": [],
             "grid": False,
             "log-log": False,
+            "semilog-x": False,
+            "semilog-y": False,
             "suppress_legend": False,
             "x_label": None,
             "y_label": None,
@@ -71,12 +73,18 @@ class BasePlot:
 
     def resolve_parameters(self):
         """Act on parameter values to modify plot appearance"""
+        if self.parameters["grid"]:
+            plt.grid(which="both", color="#cfcfcf")
+
         if self.parameters["log-log"]:
             plt.xscale("log")
             plt.yscale("log")
 
-        if self.parameters["grid"]:
-            plt.grid(which="both", color="#cfcfcf")
+        if self.parameters["semilog-x"]:
+            plt.xscale("log")
+
+        if self.parameters["semilog-y"]:
+            plt.yscale("log")
 
         if not self.parameters["suppress_legend"]:
             plt.legend()
