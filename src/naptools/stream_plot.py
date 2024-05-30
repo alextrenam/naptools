@@ -7,40 +7,43 @@ from naptools import BaseData, BasePlot
 import os
 
 
-class ContourData(BaseData):
-    """Class for holding and performing operations on contour plot data"""
+# THIS IS NOT IN WORKING ORDER YET
+
+
+class StreamData(BaseData):
+    """Class for holding and performing operations on stream plot data"""
     def __init__(self, data_file_dict):
         super().__init__(data_file_dict)
-        self.contour_df_dict = self.data_df_dict
+        self.stream_df_dict = self.data_df_dict
 
     def get_data_limits(self, variable):
         """Returns an array containing the min and max of each data file"""
-        data_limits = np.zeros((len(self.contour_df_dict), 2))
+        data_limits = np.zeros((len(self.stream_df_dict), 2))
         i = 0
 
         if "magnitude" in variable:
-            for df in self.contour_df_dict.values():
+            for df in self.stream_df_dict.values():
                 df_magnitudes = np.sqrt(df.iloc[:, 0]**2 + df.iloc[:, 1]**2 + df.iloc[:, 2]**2)
                 data_limits[i] = [df_magnitudes.min(), df_magnitudes.max()]
                 i += 1
 
         else:
-            for df in self.contour_df_dict.values():
+            for df in self.stream_df_dict.values():
                 data_limits[i] = [df[variable].min(), df[variable].max()]
                 i += 1
 
         return data_limits
 
 
-class ContourPlot(BasePlot):
+class StreamPlot(BasePlot):
     """Class for creating error plots based on the underlying error data"""
-    def __init__(self, contour_data):
-        super().__init__(contour_data)
-        self.contour_data = self.data
+    def __init__(self, stream_data):
+        super().__init__(stream_data)
+        self.stream_data = self.data
         self.set_plotting_parameters()
 
     def set_plotting_parameters(self):
-        """Set the default contour plot parameters"""
+        """Set the default stream plot parameters"""
         # Default parameters (alphabetical order)
         self.parameters["colour_bar_font_size"] = 0.75 * 32  # Should be 0.75 * font_size
         self.parameters["colour_bar_format"] = ".5f"
@@ -48,12 +51,8 @@ class ContourPlot(BasePlot):
         self.parameters["colour_map"] = cm.plasma
         self.parameters["individual_colour_bar"] = True
         self.parameters["mask_conditions"] = None
-        self.parameters["num_thin_lines"] = 5
         self.parameters["separate_colour_bar"] = False
         self.parameters["suppress_legend"] = True
-        self.parameters["symlognorm_linear_width"] = 0.01
-        self.parameters["thick_contour_line_thickness"] = 0.5
-        self.parameters["thin_contour_line_thickness"] = 0.05
         self.parameters["x_label"] = "$x$"
         self.parameters["y_label"] = "$y$"
 
@@ -130,12 +129,6 @@ class ContourPlot(BasePlot):
             # Discrete colour values
             self.colour_levels = self.compute_levels(200)
             
-            # Values defining the contour lines
-            self.contour_levels = self.compute_levels(50)
-            self.thick_contour_levels = self.contour_levels[
-                :: self.parameters["num_thin_lines"]
-            ]
-
             # Check in the csv file that paraview labels your x and y
             # coordinates with the following
             Xi = data_df["Points:0"]
@@ -151,14 +144,10 @@ class ContourPlot(BasePlot):
             
             # May have to hard code these to get them to look good, or at
             # least format them properly.
-            # xx_ticks = [float(values.min()), float(values.max())]
-            xx_ticks = [float(self.colour_bar_min), float(self.colour_bar_max)]
-            
+            xx_ticks = [float(values.min()), float(values.max())]
             c_bar_format = self.parameters["colour_bar_format"]
-            # xx_labels = [f"{float(values.min()):{c_bar_format}}",
-            #              f"{float(values.max()):{c_bar_format}}"]
-            xx_labels = [f"{float(self.colour_bar_min):{c_bar_format}}",
-                         f"{float(self.colour_bar_max):{c_bar_format}}"]
+            xx_labels = [f"{float(values.min()):{c_bar_format}}",
+                         f"{float(values.max()):{c_bar_format}}"]
             
             # Note: depending on your data, you may want to choose a different
             # norm and set logarithmic = False in the above. There are norms
@@ -180,31 +169,6 @@ class ContourPlot(BasePlot):
                 # norm=colors.LogNorm(),
                 norm=colors.SymLogNorm(linthresh=self.linear_width, linscale=1),
                 cmap=self.parameters["colour_map"],
-            )
-            
-            # Remove the lines between filled regions (we want to add our own):
-            for c in self.axs.collections:
-                c.set_edgecolor("face")
-                
-            # Add in the contour lines (play with the alpha and colour values
-            # to get it to look good)
-            self.axs.tricontour(
-                Xi,
-                Yi,
-                values,
-                self.thick_contour_levels,
-                alpha=0.5,
-                colors=["1."],
-                linewidths=[self.parameters["thick_contour_line_thickness"]],
-            )
-            self.axs.tricontour(
-                Xi,
-                Yi,
-                values,
-                self.contour_levels,
-                alpha=0.15,
-                colors=["1."],
-                linewidths=[self.parameters["thin_contour_line_thickness"]],
             )
             
             # Remove axis ticks
