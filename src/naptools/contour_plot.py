@@ -128,10 +128,10 @@ class ContourPlot(BasePlot):
             )
 
             # Discrete colour values
-            self.colour_levels = self.compute_levels(200)
+            self.colour_levels = self.compute_levels(200)  # , logarithmic=True)
             
             # Values defining the contour lines
-            self.contour_levels = self.compute_levels(50)
+            self.contour_levels = self.compute_levels(50)  # , logarithmic=True)
             self.thick_contour_levels = self.contour_levels[
                 :: self.parameters["num_thin_lines"]
             ]
@@ -178,7 +178,7 @@ class ContourPlot(BasePlot):
                 values,
                 self.colour_levels,
                 # norm=colors.LogNorm(),
-                norm=colors.SymLogNorm(linthresh=self.linear_width, linscale=1),
+                norm=colors.SymLogNorm(linthresh=self.linear_width, linscale=1.0),
                 cmap=self.parameters["colour_map"],
             )
             
