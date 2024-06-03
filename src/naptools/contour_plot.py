@@ -46,6 +46,7 @@ class ContourPlot(BasePlot):
         self.parameters["colour_bar_format"] = ".5f"
         self.parameters["colour_bar_location"] = "right"
         self.parameters["colour_map"] = cm.plasma
+        self.parameters["colour_range"] = 1.0
         self.parameters["individual_colour_bar"] = True
         self.parameters["mask_conditions"] = None
         self.parameters["num_thin_lines"] = 5
@@ -107,6 +108,10 @@ class ContourPlot(BasePlot):
         if not self.parameters["individual_colour_bar"]:
             self.colour_bar_min = self.total_data_min * (1.0 + 1.0e-10)
             self.colour_bar_max = self.total_data_max * (1.0 - 1.0e-10)
+            self.colour_bar_centre = 0.5 * (np.mean(self.data_limits[:, 0]) + np.mean(self.data_limits[:, 1]))
+            colour_bar_mid = 0.5 * (self.colour_bar_min + self.colour_bar_max)
+            self.vmin = colour_bar_mid - self.parameters["colour_range"] * (self.colour_bar_centre - self.colour_bar_min)
+            self.vmax = colour_bar_mid + self.parameters["colour_range"] * (self.colour_bar_centre - self.colour_bar_min)
 
         if self.parameters["separate_colour_bar"]:
             self.dummy_data_df = self.contour_data.data_df_dict[timestamps[0]]
@@ -122,6 +127,9 @@ class ContourPlot(BasePlot):
             if self.parameters["individual_colour_bar"]:
                 self.colour_bar_min = self.data_limits[series_counter, 0]
                 self.colour_bar_max = self.data_limits[series_counter, 1]
+                self.colour_bar_centre = np.mean(data_df[variable])
+                self.vmin = colour_bar_mid - self.parameters["colour_range"] * (self.colour_bar_centre - self.colour_bar_min)
+                self.vmax = colour_bar_mid + self.parameters["colour_range"] * (self.colour_bar_centre - self.colour_bar_min)
                 
             self.linear_width = self.parameters["symlognorm_linear_width"] * (
                 self.colour_bar_max - self.colour_bar_min
@@ -178,7 +186,7 @@ class ContourPlot(BasePlot):
                 values,
                 self.colour_levels,
                 # norm=colors.LogNorm(),
-                norm=colors.SymLogNorm(linthresh=self.linear_width, linscale=1.0),
+                norm=colors.SymLogNorm(linthresh=self.linear_width, vmin=self.vmin, vmax=self.vmax),
                 cmap=self.parameters["colour_map"],
             )
             
