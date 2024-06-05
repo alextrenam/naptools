@@ -4,9 +4,6 @@ from naptools import BaseData, BasePlot
 import os
 
 
-# THIS IS NOT IN WORKING ORDER YET
-
-
 class StreamData(BaseData):
     """Class for holding and performing operations on stream plot data"""
     def __init__(self, data_file_dict):
