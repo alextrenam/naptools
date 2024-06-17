@@ -15,21 +15,18 @@ class ContourData(BaseData):
 
     def get_data_limits(self, variable):
         """Returns an array containing the min and max of each data file"""
-        data_limits = np.zeros((len(self.contour_df_dict), 2))
-        i = 0
+        data_limits_dict = {}
 
         if "magnitude" in variable:
-            for df in self.contour_df_dict.values():
+            for df_timestamp, df in self.contour_df_dict.items():
                 df_magnitudes = np.sqrt(df.iloc[:, 0]**2 + df.iloc[:, 1]**2 + df.iloc[:, 2]**2)
-                data_limits[i] = [df_magnitudes.min(), df_magnitudes.max()]
-                i += 1
+                data_limits_dict[df_timestamp] = [df_magnitudes.min(), df_magnitudes.max()]
 
         else:
-            for df in self.contour_df_dict.values():
-                data_limits[i] = [df[variable].min(), df[variable].max()]
-                i += 1
+            for df_timestamp, df in self.contour_df_dict.items():
+                data_limits_dict[df_timestamp] = [df[variable].min(), df[variable].max()]
 
-        return data_limits
+        return data_limits_dict
 
 
 class ContourPlot(BasePlot):
@@ -49,12 +46,13 @@ class ContourPlot(BasePlot):
         self.parameters["colour_range"] = 1.0
         self.parameters["individual_colour_bar"] = True
         self.parameters["mask_conditions"] = None
+        self.parameters["num_contours"] = 100
         self.parameters["num_thin_lines"] = 5
         self.parameters["separate_colour_bar"] = False
         self.parameters["suppress_legend"] = True
-        self.parameters["symlognorm_linear_width"] = 0.01
-        self.parameters["thick_contour_line_thickness"] = 0.5
-        self.parameters["thin_contour_line_thickness"] = 0.05
+        self.parameters["symlognorm_linear_width"] = 1.0
+        self.parameters["thick_contour_line_thickness"] = 1.0
+        self.parameters["thin_contour_line_thickness"] = 1.0
         self.parameters["x_label"] = "$x$"
         self.parameters["y_label"] = "$y$"
 
@@ -100,8 +98,8 @@ class ContourPlot(BasePlot):
 
         self.data_limits = self.contour_data.get_data_limits(variable)
 
-        self.total_data_min = self.data_limits[:, 0].min()
-        self.total_data_max = self.data_limits[:, 1].max()
+        self.total_data_min = min(limits[0] for limits in self.data_limits.values())
+        self.total_data_max = max(limits[0] for limits in self.data_limits.values())
 
         # Default behaviour is to use the entire set of data for the colouring
         # The multiplication makes sure the limits show correctly
@@ -116,8 +114,6 @@ class ContourPlot(BasePlot):
         if self.parameters["separate_colour_bar"]:
             self.dummy_data_df = self.contour_data.data_df_dict[timestamps[0]]
             
-        series_counter = 0
-        
         for timestamp in timestamps:
             self.output_filename = self.base_output_filename + "_" + timestamp + self.file_extension
             
@@ -125,11 +121,12 @@ class ContourPlot(BasePlot):
             data_df = self.contour_data.data_df_dict[timestamp]
             
             if self.parameters["individual_colour_bar"]:
-                self.colour_bar_min = self.data_limits[series_counter, 0]
-                self.colour_bar_max = self.data_limits[series_counter, 1]
-                self.colour_bar_centre = np.mean(data_df[variable])
-                self.vmin = colour_bar_mid - self.parameters["colour_range"] * (self.colour_bar_centre - self.colour_bar_min)
-                self.vmax = colour_bar_mid + self.parameters["colour_range"] * (self.colour_bar_centre - self.colour_bar_min)
+                self.colour_bar_min = self.data_limits[timestamp][0]
+                self.colour_bar_max = self.data_limits[timestamp][1]
+                # self.colour_bar_centre = np.mean(data_df[variable])
+                colour_bar_mid = 0.5 * (self.colour_bar_min + self.colour_bar_max)
+                self.vmin = colour_bar_mid - self.parameters["colour_range"] * (colour_bar_mid - self.colour_bar_min)
+                self.vmax = colour_bar_mid + self.parameters["colour_range"] * (colour_bar_mid - self.colour_bar_min)
                 
             self.linear_width = self.parameters["symlognorm_linear_width"] * (
                 self.colour_bar_max - self.colour_bar_min
@@ -139,7 +136,7 @@ class ContourPlot(BasePlot):
             self.colour_levels = self.compute_levels(200)  # , logarithmic=True)
             
             # Values defining the contour lines
-            self.contour_levels = self.compute_levels(50)  # , logarithmic=True)
+            self.contour_levels = self.compute_levels(self.parameters["num_contours"])  # , logarithmic=True)
             self.thick_contour_levels = self.contour_levels[
                 :: self.parameters["num_thin_lines"]
             ]
@@ -159,12 +156,9 @@ class ContourPlot(BasePlot):
             
             # May have to hard code these to get them to look good, or at
             # least format them properly.
-            # xx_ticks = [float(values.min()), float(values.max())]
             xx_ticks = [float(self.colour_bar_min), float(self.colour_bar_max)]
             
             c_bar_format = self.parameters["colour_bar_format"]
-            # xx_labels = [f"{float(values.min()):{c_bar_format}}",
-            #              f"{float(values.max()):{c_bar_format}}"]
             xx_labels = [f"{float(self.colour_bar_min):{c_bar_format}}",
                          f"{float(self.colour_bar_max):{c_bar_format}}"]
             
@@ -180,8 +174,6 @@ class ContourPlot(BasePlot):
             # can't be applied. It works by defining a triangulation from
             # (x, y) then interpolating z.
             contour = self.axs.tricontourf(
-                # Xi,
-                # Yi,
                 triangulation,
                 values,
                 self.colour_levels,
@@ -228,8 +220,6 @@ class ContourPlot(BasePlot):
 
             if self.parameters["separate_colour_bar"]:
                 self.make_separate_colour_bar(variable)
-
-            series_counter += 1
 
     def make_colour_bar(self, fig, axs, variable, contour, ticks, labels):
         """Add and format colour bar"""

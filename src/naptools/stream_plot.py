@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import cm
 from naptools import BaseData, BasePlot
 import os
 
@@ -23,6 +24,7 @@ class StreamPlot(BasePlot):
         # Default parameters (alphabetical order)
         self.parameters["arrow_sparsity"] = 1
         self.parameters["arrow_inverse_scale"] = None
+        self.parameters["colour_map"] = cm.plasma
         self.parameters["suppress_legend"] = True
         self.parameters["x_label"] = "$x$"
         self.parameters["y_label"] = "$y$"
@@ -63,6 +65,7 @@ class StreamPlot(BasePlot):
                 Vi,
                 colouring,
                 scale=self.parameters["arrow_inverse_scale"],
+                cmap=self.parameters["colour_map"],
             )
             
             # Remove axis ticks
