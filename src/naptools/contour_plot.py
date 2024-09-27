@@ -104,13 +104,13 @@ class ContourPlot(BasePlot):
         # Default behaviour is to use the entire set of data for the colouring
         # The multiplication makes sure the limits show correctly
         if not self.parameters["individual_colour_bar"]:
-            self.colour_bar_min = self.total_data_min * (1.0 + 1.0e-10)
-            self.colour_bar_max = self.total_data_max * (1.0 - 1.0e-10)
+            self.colour_bar_min = self.total_data_min * (1.0 - 1.0e-10)
+            self.colour_bar_max = self.total_data_max * (1.0 + 1.0e-10)
             # self.colour_bar_centre = 0.5 * (np.mean(self.data_limits[:, 0]) + np.mean(self.data_limits[:, 1]))
             colour_bar_mid = 0.5 * (self.colour_bar_min + self.colour_bar_max)
             self.vmin = colour_bar_mid - self.parameters["colour_range"] * (colour_bar_mid - self.colour_bar_min)
             self.vmax = colour_bar_mid - self.parameters["colour_range"] * (colour_bar_mid - self.colour_bar_max)
-
+            
         if self.parameters["separate_colour_bar"]:
             self.dummy_data_df = self.contour_data.data_df_dict[timestamps[0]]
             
@@ -121,13 +121,13 @@ class ContourPlot(BasePlot):
             data_df = self.contour_data.data_df_dict[timestamp]
             
             if self.parameters["individual_colour_bar"]:
-                self.colour_bar_min = self.data_limits[timestamp][0]
-                self.colour_bar_max = self.data_limits[timestamp][1]
+                self.colour_bar_min = self.data_limits[timestamp][0] * (1.0 - 1.0e-10)
+                self.colour_bar_max = self.data_limits[timestamp][1] * (1.0 + 1.0e-10)
                 # self.colour_bar_centre = np.mean(data_df[variable])
                 colour_bar_mid = 0.5 * (self.colour_bar_min + self.colour_bar_max)
                 self.vmin = colour_bar_mid - self.parameters["colour_range"] * (colour_bar_mid - self.colour_bar_min)
                 self.vmax = colour_bar_mid - self.parameters["colour_range"] * (colour_bar_mid - self.colour_bar_max)
-                
+
             self.linear_width = self.parameters["symlognorm_linear_width"] * (
                 self.colour_bar_max - self.colour_bar_min
             )

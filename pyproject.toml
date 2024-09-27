@@ -1,14 +1,14 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "naptools"
-version = ""
+version = "0.6.0"
 authors = [
   { name="alextrenam", email="alextrenam@gmail.com" },
 ]
-description = ""
+description = "Python package (using matplotlib as a basis) to quickly make nice-looking numerical analysis plots."
 readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
