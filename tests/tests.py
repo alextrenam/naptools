@@ -1,6 +1,18 @@
+# ==========================================================
+#
+#  Unit tests
+#
+# ==========================================================
+"""
+This file implements unit tests for the NAPTools package.
+The tests are as follows:
+
+
+"""
 import naptools as nap
 
 # Here I should run check the functions perform as expected on some test data
+
 
 test_data_files = {
     "p1": "./data/errors_p1.csv",
@@ -39,10 +51,21 @@ error_data.print_degree("p2")
 
 # Error plots
 error_plots = nap.ErrorPlot(error_data)
-error_plots.plot(["p", "n", "psi"], "p1", "./results/error_plot_p1.pdf")
-error_plots.plot(["p", "n", "psi"], "p2", "./results/error_plot_p2.pdf")
-error_plots.plot(["n", "psi"],
+error_plots.plot("h", ["p", "n", "psi"], "p1", "./results/error_plot_p1.pdf")
+error_plots.plot("h", ["p", "n", "psi"], "p2", "./results/error_plot_p2.pdf")
+error_plots.plot("h",
+                 ["n", "psi"],
                  ["p1", "p2", "p3", "p4"],
                  "./results/error_plot_n_psi.pdf",
                  parameters=plotting_params)
-error_plots.plot("n", ["p1", "p2", "p3", "p4"], "./results/error_plot_n.pdf")
+error_plots.plot("h", "n", ["p1", "p2", "p3", "p4"], "./results/error_plot_n.pdf")
+
+
+# The following code should work -- the aim is minimal code required to create plots
+p_refinement_plot = nap.ErrorPlot("./data/p_refinement_errors.csv")
+p_refinement_plot.plot("p", "u_L2", "./results/p_refinement_errors.pdf")
+
+data_a = [0, 1, 2, 3, 4]
+data_b = [i**2 for i in data_a]
+
+nap.quick_plot(data_a, data_b, "./results/quick_plot.pdf")

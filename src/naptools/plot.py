@@ -37,6 +37,7 @@ class BasePlot:
 
         # Default plotting parameters (alphabetical order)
         self.parameters = {
+            "custom_style_dict": {},
             "drop": [],
             "grid": False,
             "log-log": False,
