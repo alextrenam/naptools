@@ -85,25 +85,25 @@ class ErrorPlot(BasePlot):
         relevant_error_dfs = [self.error_data.error_df_dict[data_id] for data_id in data_ids]
         relevant_error_dfs_dict = dict(zip(data_ids, relevant_error_dfs))
 
-        line_styles = LineStyles(self.data, dependent_vars, data_ids,
-                                 drop=self.parameters["drop"],
-                                 custom_style_dict=self.parameters["custom_style_dict"])
-        styles = line_styles.line_styles_by_degree()
-        colours = line_styles.colours_by_degree()
-        style_degree_index = 0
+        # line_styles = LineStyles(self.data, dependent_vars, data_ids,
+        #                          drop=self.parameters["drop"],
+        #                          custom_style_dict=self.parameters["custom_style_dict"])
+        # styles = line_styles.line_styles_by_degree()
+        # colours = line_styles.colours_by_degree()
+        # style_degree_index = 0
         
         for error_df_id, error_df in relevant_error_dfs_dict.items():
             # Remove unnecessary columns from DataFrame
             plotting_df = error_df.set_index(independent_var)
             columns_to_drop = []
 
-            for column in plotting_df.columns:
-                # Assuming the ID is of the form "variable norm"
-                variable = column.split(" ")[0]
-                norm = column.split(" ")[1]
+            # for column in plotting_df.columns:
+            #     # Assuming the ID is of the form "variable norm"
+            #     variable = column.split(" ")[0]
+            #     norm = column.split(" ")[1]
                 
-                if variable not in dependent_vars:
-                    columns_to_drop.append(column)
+            #     if variable not in dependent_vars:
+            #         columns_to_drop.append(column)
                      
             plotting_df.drop(
                 axis=1,
@@ -123,8 +123,9 @@ class ErrorPlot(BasePlot):
             plotting_df.rename(columns=renaming_columns, inplace=True)
 
             # Create plot
-            plotting_df.plot(ax=self.axs, style=list(styles[style_degree_index]), color=list(colours[style_degree_index]))
-            style_degree_index += 1
+            # plotting_df.plot(ax=self.axs, style=list(styles[style_degree_index]), color=list(colours[style_degree_index]))
+            plotting_df.plot(ax=self.axs)
+            # style_degree_index += 1
 
         self.output()
 

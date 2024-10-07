@@ -27,6 +27,7 @@ class BaseData:
         print(self.data_df_dict[data_df_id])
 
 
+        
 class BasePlot:
     """Basic two-dimensional plot with one independent and one dependent variable.
     This class is also the basis for the other kinds of plots, featuring the general
