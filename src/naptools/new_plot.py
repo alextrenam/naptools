@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import os
+from naptools import LineStyles, utils
 
 # Default style parameters
 naptools_dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -26,21 +27,14 @@ class Plot:
         self.data = {}
         self.add_data(data, name)
         
-        print(self.data)
-        
-        # # Populate dictionary of data
-        # for data_file_id, data_file in self.data_file_dict.items():
-        #     data_df = pd.read_csv(data_file)
-        #     self.data_df_dict[data_file_id] = data_df
-        
         # Initialise default plotting parameters (alphabetical order)
         self.parameters = {
+            "custom_labels": {},
             "custom_style_dict": {},
             "drop": [],
             "grid": False,
-            "loglog": False,
-            "semilog-x": False,
-            "semilog-y": False,
+            "include_slopes": False,
+            "scale_axes": None,
             "suppress_legend": False,
             "x_label": None,
             "y_label": None,
@@ -74,12 +68,12 @@ class Plot:
             
         elif isinstance(data, np.ndarray):
             self.data[name] = pd.DataFrame(data)
-            columns = ["Indep. Var."] + [f"Dep. Var. {index}" for index in range(1, self.data[name].shape[1])]
+            columns = ["Ind. Var."] + [f"Dep. Var. {index}" for index in range(1, self.data[name].shape[1])]
             self.data[name].columns = columns
             
         elif isinstance(data, list):
             self.data[name] = pd.DataFrame(data)
-            columns = ["Indep. Var."] + [f"Dep. Var. {index}" for index in range(1, self.data[name].shape[1])]
+            columns = ["Ind. Var."] + [f"Dep. Var. {index}" for index in range(1, self.data[name].shape[1])]
             self.data[name].columns = columns
 
         elif isinstance(data, str):
@@ -119,40 +113,87 @@ class Plot:
 
     def update_labels(self, name, custom_labels_dict):
         """Update labels for plotting."""
-        self.data[name].rename(columns=custom_labels_dict, inplace=True)
         
-    def plot(self, output_filename, independent_var=None, dependent_vars=None, name=None, parameters={}):
+        
+    def plot(self, output_filename, ind_var=None, dep_vars=None, names=None, parameters={}):
         """Plot the given independent and dependent variables"""
         self.parameters.update(parameters)
         self.output_filename = output_filename
         self.fig, self.axs = plt.subplots()
       
-        if name is not None:
-            self.data[name].drop(
-                axis=1,
-                labels=self.parameters["drop"],
-                inplace=True,
-            )
-            self.data[name].plot(independent_var, dependent_vars, ax=self.axs)
+        if isinstance(dep_vars, str):
+            dep_vars = [dep_vars]
+
+        if isinstance(names, str):
+            names = [names]
+
+        if names is None:
+            names = self.data.keys()
+
+        # line_styles = LineStyles(self.data, dependent_var, names,
+        #                          drop=self.parameters["drop"],
+        #                          custom_style_dict=self.parameters["custom_style_dict"])
+        # styles = line_styles.line_styles_by_degree()
+        # colours = line_styles.colours_by_degree()
+        # style_degree_index = 0
+        
+        for name in names:
+            plotting_df = self.data[name].copy(deep=True)  # .set_index(ind_var)
             
-        else:
-            for data_file, data_df in self.data.items():
-                data_df.drop(
+            # Drop unnecessary columns
+            drop_columns = []
+
+            for column in list(plotting_df.columns.values):
+                if (ind_var is not None and column not in ind_var) and (
+                    (dep_vars is not None and column not in dep_vars)
+                    or (column in self.parameters["drop"])):
+                    drop_columns.append(column)
+            
+            try:
+                plotting_df.drop(
                     axis=1,
-                    labels=self.parameters["drop"],
+                    labels=drop_columns,
                     inplace=True,
-                )
-                data_df.plot(independent_var, dependent_vars, ax=self.axs)
+                    )
+            except Exception as e:
+                print(f"Exception: {e}. Unable to drop columns -- check they have not been relabelled or already removed.")
+            
+            # Update custom labels
+            plotting_df.rename(columns=self.parameters["custom_labels"][name], inplace=True)
 
-        self.output(independent_var)
+            # Get all columns except the independent variable
+            ind_var_index = plotting_df.columns.get_loc(ind_var)
+            plotting_dep_vars = plotting_df.columns.delete(ind_var_index)
+            
+            if self.parameters["include_slopes"]:
+                renaming_columns = {}
+                
+                for dep_var in plotting_dep_vars:
+                    # Calculate slope and relabel the columns to include
+                    slope = utils.calculate_slope(plotting_df[ind_var], plotting_df[dep_var], self.parameters["scale_axes"])
+                    renaming_columns[dep_var] = f"{dep_var}, Slope: {slope:.3f}" 
+            
+            # Rename columns for correct plot labels
+            plotting_df.rename(columns=renaming_columns, inplace=True)
 
-    def output(self, independent_var):
+            plotting_dep_vars = plotting_df.columns.delete(ind_var_index)
+
+            # Create plot
+            # plotting_df.plot(ax=self.axs, style=list(styles[style_degree_index]), color=list(colours[style_degree_index]))
+            # style_degree_index += 1
+
+            # Plot
+            plotting_df.plot(ind_var, plotting_dep_vars, ax=self.axs)
+            
+        self.output(ind_var)
+
+    def output(self, ind_var):
         """Format and output plot to file"""
         if self.parameters["x_label"] is not None:
             plt.xlabel(self.parameters["x_label"])
 
         else:
-            plt.xlabel(independent_var)
+            plt.xlabel(ind_var)
 
         if self.parameters["y_label"] is not None:
             plt.ylabel(self.parameters["y_label"])
@@ -167,18 +208,24 @@ class Plot:
 
     def resolve_parameters(self):
         """Act on parameter values to modify plot appearance"""
+        
+        
         if self.parameters["grid"]:
             plt.grid(which="both", color="#cfcfcf")
 
-        if self.parameters["loglog"]:
-            plt.xscale("log")
-            plt.yscale("log")
+        match self.parameters["scale_axes"]:
+            case "log-log":
+                plt.xscale("log")
+                plt.yscale("log")
 
-        if self.parameters["semilog-x"]:
-            plt.xscale("log")
+            case "semilog-x":
+                plt.xscale("log")
 
-        if self.parameters["semilog-y"]:
-            plt.yscale("log")
+            case "semilog-y":
+                plt.yscale("log")
+
+            case _:
+                pass
 
         if not self.parameters["suppress_legend"]:
             plt.legend()
