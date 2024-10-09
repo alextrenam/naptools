@@ -7,7 +7,9 @@
 This file implements unit tests for the NAPTools package.
 The tests are as follows:
 
-
+1. Creating a Plot instance from various data sources
+2. Adding, editing, and removing data from a Plot instance
+3. 
 """
 import naptools as nap
 import numpy as np
@@ -107,13 +109,13 @@ print(data_store.list_data())
 #  Plotting
 #
 # ==========================================================
-data_store.plot("./results/test_output.pdf", name="list_data")
+data_store.plot("./results/test_output.pdf", names="list_data")
 
 params = {
     "drop": ["Time taken"],
 }
 
-data_store.plot("./results/test_output_2.pdf", name="data2", independent_var="h", dependent_vars=["psi L2", "p H1"], parameters=params)
+data_store.plot("./results/test_output_2.pdf", names="data2", ind_var="h", dep_vars=["psi L2", "p H1"], parameters=params)
 
 
 a = np.array([1, 2, 3, 4, 5])
@@ -130,3 +132,5 @@ plot = nap.Plot(data_dict)
 # plot.update_labels("default_0", "x^2")
 # plot.update_labels("default_1", "x^3")
 plot.plot("./results/dummy.pdf")
+
+nap.power.plot(a=a, b=b, c=c, output_filename="./results/power_plot.png")
