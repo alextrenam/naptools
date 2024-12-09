@@ -165,7 +165,7 @@ class Plot:
             if name in self.parameters["custom_labels"].keys():
                 # Update custom labels
                 plotting_df.rename(columns=self.parameters["custom_labels"][name], inplace=True)
-
+                
             if ind_var is None:
                 plotting_dep_vars = plotting_df.columns
 
@@ -185,6 +185,9 @@ class Plot:
                     # Rename columns for correct plot labels
                     plotting_df.rename(columns=renaming_columns, inplace=True)
 
+                # Get updated plotting variables columns
+                plotting_dep_vars = plotting_df.columns.delete(ind_var_index)
+                
             # Create plot
             plotting_df.plot(ind_var, plotting_dep_vars, ax=self.axs)
             
