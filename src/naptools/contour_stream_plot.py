@@ -5,9 +5,10 @@ from matplotlib import cm, ticker, colors
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from naptools import BaseData, BasePlot
 import os
+import re
 
 
-class ContourData(BaseData):
+class ContourStreamData(BaseData):
     """Class for holding and performing operations on contour plot data"""
     def __init__(self, data_file_dict):
         super().__init__(data_file_dict)
@@ -29,7 +30,7 @@ class ContourData(BaseData):
         return data_limits_dict
 
 
-class ContourPlot(BasePlot):
+class ContourStreamPlot(BasePlot):
     """Class for creating error plots based on the underlying error data"""
     def __init__(self, contour_data):
         super().__init__(contour_data)
@@ -39,6 +40,9 @@ class ContourPlot(BasePlot):
     def set_plotting_parameters(self):
         """Set the default contour plot parameters"""
         # Default parameters (alphabetical order)
+        self.parameters["arrow_sparsity"] = 1
+        self.parameters["arrow_inverse_scale"] = None
+        self.parameters["arrow_colour_map"] = cm.plasma
         self.parameters["colour_bar_font_size"] = 0.75 * 32  # Should be 0.75 * font_size
         self.parameters["colour_bar_format"] = ".5f"
         self.parameters["colour_bar_location"] = "right"
@@ -91,6 +95,56 @@ class ContourPlot(BasePlot):
             return np.power(np.exp(1), lev_exp)
         else:
             return np.linspace(self.colour_bar_min, self.colour_bar_max, num_levels)
+
+    def plot_quiver(self, variable, data_df, Xi, Yi):
+        """Add a single quiver plot to the current timestamp plot"""
+
+        raw_var = re.split('[:]', variable)[0]
+        
+        # Check in the csv file that paraview labels your x and y
+        # coordinates with the following
+        Xi = data_df["Points:0"][::self.parameters["arrow_sparsity"]]
+        Yi = data_df["Points:1"][::self.parameters["arrow_sparsity"]]
+
+        # mask_cond = not (Xi > 0.5 * 2.0 - 0.3).any()
+        
+        # Xim = np.ma.masked_where(mask_cond, Xi)
+        # Yim = np.ma.masked_where(mask_cond, Yi)
+        
+        Ui = data_df[raw_var + ":0"][::self.parameters["arrow_sparsity"]]
+        Vi = data_df[raw_var + ":1"][::self.parameters["arrow_sparsity"]]
+
+        # # Propagate mask from Xi and Yi to Ui and Vi
+        # if np.ma.is_masked(Xim) and np.ma.is_masked(Yim):
+        #     combined_mask = np.logical_or(Xim.mask, Yim.mask)
+        #     Ui = np.ma.masked_where(combined_mask, Ui)
+        #     Vi = np.ma.masked_where(combined_mask, Vi)
+            
+        # # Replace masked values with NaN
+        # Ui = Ui.filled(np.nan)
+        # Vi = Vi.filled(np.nan)
+
+        # Xi = np.ma.masked_where(self.parameters["mask_conditions"], Xi)
+        # Yi = np.ma.masked_where(self.parameters["mask_conditions"], Yi)
+        
+        # Ui = np.ma.masked_where(self.parameters["mask_conditions"], Ui)
+        # Vi = np.ma.masked_where(self.parameters["mask_conditions"], Vi)
+        
+        colouring = np.hypot(Ui, Vi)
+
+        # The "norm" argument in the following function call means that
+        # currently the arrows are coloured according to the global data limits
+        quiver = self.axs.quiver(
+            Xi,
+            Yi,
+            Ui,
+            Vi,
+            colouring,
+            width=self.parameters["arrow_width_scale"],
+            # scale=self.parameters["arrow_inverse_scale"],
+            cmap=self.parameters["arrow_colour_map"],
+            norm=colors.Normalize(vmin=self.colour_bar_min, vmax=self.colour_bar_max)
+            )
 
     def plot(self, variable, timestamps, output_filename, parameters={}):
         """Create a single or series of contour plot(s)"""
@@ -207,6 +261,8 @@ class ContourPlot(BasePlot):
                 colors=["1."],
                 linewidths=[self.parameters["thin_contour_line_thickness"]],
             )
+
+            self.plot_quiver(variable, data_df, Xi, Yi)
             
             # Remove axis ticks
             self.axs.tick_params(left=False,
