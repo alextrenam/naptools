@@ -5,7 +5,7 @@ class LineStyles:
     """Class for controlling the style of lines in plots. The line styles are
     stored as numpy arrays with each line style consisting in the format
     [marker, colour, line style]."""
-    def __init__(self, data, variables, degree_ids, drop=None, custom_style_dict={}):
+    def __init__(self, data, variables, degree_ids, drop=None, norm_split=" ", custom_style_dict={}):
         self.data = data
         if type(variables) is str:
             self.variables = [variables]
@@ -16,6 +16,7 @@ class LineStyles:
         else:
             self.degree_ids = degree_ids
         self.drop = drop
+        self.norm_split=norm_split
         self.markers = ["o", "x", "^", "v", "d", "+", "<", ">", "s", "*", "|", "_"]
         self.colours = ["#3C9359", "#FF8800", "#5CA7D9", "#B87D4B", "#336699", "#7D5BA6",
                    "blue", "orange", "green", "red", "purple", "pink"]
@@ -38,16 +39,16 @@ class LineStyles:
         df_columns = next(iter(data.error_df_dict.values())).columns
 
         for column in df_columns:
-            if column != "h" and column != "Time taken" and column not in self.drop:
+            if column != "h" and column != "Time" + self.norm_split+ "taken" and column not in self.drop:
                 # Assuming the ID is of the form "variable norm"
-                variable = column.split(" ")[0]
-                norm = column.split(" ")[1]
+                variable = column.split(self.norm_split)[0]
+                norm = column.split(self.norm_split)[1]
 
                 self.variable_list.append(variable)
                 self.norm_list.append(norm)
 
                 for var in self.variables:
-                    if var + " " in column:
+                    if var + self.norm_split in column:
                         self.relevant_columns.append(column)
                         self.relevant_norm_list.append(norm)
                         self.relevant_variable_list.append(variable)

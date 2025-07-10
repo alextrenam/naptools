@@ -56,6 +56,7 @@ class ErrorPlot(BasePlot):
         self.parameters["log-log"] = True
         self.parameters["x_label"] = "$h$"
         self.parameters["y_label"] = "Error"
+        self.parameters["norm_split"] = " "
 
     def plot(self, variables, degree_ids, output_filename, parameters={}):
         """Plot the errors for the given variables at the given polynomial degrees"""
@@ -73,8 +74,9 @@ class ErrorPlot(BasePlot):
         relevant_error_dfs_dict = dict(zip(degree_ids, relevant_error_dfs))
 
         line_styles = LineStyles(self.data, variables, degree_ids,
-                                 drop=self.parameters["drop"],
-                                 custom_style_dict=self.parameters["custom_style_dict"])
+            drop=self.parameters["drop"],
+            norm_split=self.parameters["norm_split"],
+            custom_style_dict=self.parameters["custom_style_dict"])
         styles = line_styles.line_styles_by_degree()
         colours = line_styles.colours_by_degree()
         style_degree_index = 0
@@ -86,15 +88,15 @@ class ErrorPlot(BasePlot):
 
             for column in plotting_df.columns:
                 # Assuming the ID is of the form "variable norm"
-                variable = column.split(" ")[0]
-                norm = column.split(" ")[1]
+                variable = column.split(self.parameters["norm_split"])[0]
+                norm = column.split(self.parameters["norm_split"])[1]
                 
                 if variable not in variables:
                     columns_to_drop.append(column)
                      
             plotting_df.drop(
                 axis=1,
-                labels=["Time taken"] + columns_to_drop + self.parameters["drop"],
+                labels=["Time" + self.parameters["norm_split"] + "taken"] + columns_to_drop + self.parameters["drop"],
                 inplace=True,
             )
 
